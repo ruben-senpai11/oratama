@@ -4,7 +4,7 @@ import { App } from './App';
 import './index.css';
 import { registerSW } from 'virtual:pwa-register';
 
-// Enregistrement automatique du Service Worker PWA pour le support hors connexion
+// Enregistrement automatique du Service Worker pour le support et le chargement hors connexion
 if ('serviceWorker' in navigator) {
   registerSW({
     immediate: true,

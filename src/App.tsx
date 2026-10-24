@@ -1,7 +1,8 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { ViewScreen } from './types';
-import { PermanentBanner } from './components/PermanentBanner';
 import { Header } from './components/Header';
+import { PermanentBanner } from './components/PermanentBanner';
+import { InstallPrompt } from './components/InstallPrompt';
 import { parseQuery } from './utils/queryParser';
 
 // Chargement paresseux des écrans (lazy loading) pour optimiser le bundle JS
@@ -153,10 +154,13 @@ export const App: React.FC = () => {
         </Suspense>
       </main>
 
+      {/* Notification pop-up d'installation locale */}
+      <InstallPrompt />
+
       {/* Pied de page discret */}
       <footer className="w-full bg-[#FBF8F3] border-t border-[#E8E3DA] py-3 text-center text-[10px] text-[#6B6B7A] font-medium">
         <div className="max-w-md mx-auto px-4">
-          OraTama · Prototype d’expérimentation vocale mobile-first
+          OraTama · Prototype d’expérimentation · Mobile-first design
         </div>
       </footer>
     </div>
