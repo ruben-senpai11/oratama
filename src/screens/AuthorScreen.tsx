@@ -21,7 +21,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(30);
 
-  // État du nouvel enregistrement en prévisualisation
+  // État du nouvel essai en prévisualisation
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewMimeType, setPreviewMimeType] = useState<string>('');
   const [previewDuration, setPreviewDuration] = useState<number>(0);
@@ -45,7 +45,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
 
   useEffect(() => {
     recorderRef.current = new AudioRecorderService();
-    loadExistingVoice(selectedBookId);
+    void loadExistingVoice(selectedBookId);
 
     return () => {
       recorderRef.current?.cancelRecording();
@@ -79,7 +79,8 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
         setPreviewDuration(duration);
         const url = URL.createObjectURL(blob);
         setPreviewUrl(url);
-        setStatusMessage('Enregistrement terminé ! Écoutez l’aperçu ci-dessous avant d’enregistrer.');
+        // Message clarifié selon la demande utilisateur
+        setStatusMessage('Essai enregistré. Voulez-vous le définir comme référence ?');
       },
       onError: (err) => {
         setIsRecording(false);
@@ -115,7 +116,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
       setExistingVoice(voiceRecord);
       setPreviewBlob(null);
       setPreviewUrl(null);
-      setStatusMessage('Votre voix d’auteur a bien été enregistrée sur votre appareil ! Elle remplace désormais la voix de synthèse.');
+      setStatusMessage('Cet essai a bien été défini comme référence ! Il remplace désormais la voix de synthèse sur la fiche du livre.');
     } catch (e) {
       setErrorMessage('Erreur lors de la sauvegarde dans IndexedDB.');
     }
@@ -129,7 +130,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
     try {
       await deleteRecordedVoice(selectedBook.id);
       setExistingVoice(null);
-      setStatusMessage('Enregistrement supprimé. La voix de synthèse sera utilisée.');
+      setStatusMessage('Voix de référence supprimée. La voix de synthèse sera utilisée.');
     } catch (e) {
       setErrorMessage('Erreur lors de la suppression.');
     }
@@ -240,26 +241,34 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
-              <span>{existingVoice ? 'Réenregistrer / Remplacer' : 'Enregistrer ma voix (30s)'}</span>
+              <span>{existingVoice ? 'Réenregistrer un essai (30s)' : 'Enregistrer un essai vocal (30s)'}</span>
             </button>
           )}
         </div>
 
-        {/* Prévisualisation avant enregistrement définitif */}
+        {/* Prévisualisation après enregistrement d'un essai */}
         {previewUrl && !isRecording && (
           <div className="pt-3 border-t border-[#E8E3DA] space-y-3 text-left">
-            <p className="text-xs font-bold text-[#1B1B2A]">
-              🎧 Réécouter votre prise avant de l’enregistrer :
-            </p>
+            <div className="p-3 bg-[#FDF3E3] rounded-xl border border-[#E9A23B] space-y-1">
+              <p className="text-xs font-bold text-[#1B1B2A] flex items-center gap-1.5">
+                <span>🎧</span>
+                <span>Essai enregistré. Voulez-vous le définir comme référence ?</span>
+              </p>
+              <p className="text-[11px] text-[#6B6B7A]">
+                Écoutez l’extrait ci-dessous pour valider la clarté et le rythme avant confirmation.
+              </p>
+            </div>
+
             <audio controls src={previewUrl} className="w-full h-10" />
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 type="button"
                 onClick={handleSaveToIndexedDB}
-                className="flex-1 min-h-[44px] px-4 py-2 bg-[#1F2A5C] hover:bg-[#161E42] text-white text-xs font-bold rounded-xl shadow-sm transition-colors"
+                className="flex-1 min-h-[44px] px-4 py-2 bg-[#1F2A5C] hover:bg-[#161E42] text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5"
               >
-                ✓ Enregistrer sur cet appareil
+                <span>✓</span>
+                <span>Définir comme référence</span>
               </button>
               <button
                 type="button"
@@ -267,21 +276,22 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
                   setPreviewBlob(null);
                   if (previewUrl) URL.revokeObjectURL(previewUrl);
                   setPreviewUrl(null);
+                  setStatusMessage(null);
                 }}
                 className="min-h-[44px] px-4 py-2 bg-[#FBF8F3] hover:bg-[#EFEAE1] text-[#6B6B7A] text-xs font-semibold rounded-xl border border-[#E8E3DA] transition-colors"
               >
-                Annuler
+                Recommencer l’essai
               </button>
             </div>
           </div>
         )}
 
-        {/* État si un enregistrement existe déjà dans IndexedDB */}
+        {/* État si un enregistrement de référence existe déjà dans IndexedDB */}
         {existingVoice && !previewUrl && !isRecording && (
           <div className="pt-3 border-t border-[#E8E3DA] space-y-2 text-left">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#1F2A5C] bg-[#E8ECFA] border border-[#1F2A5C]/20 px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                <span>✓</span> Voix d’auteur active pour ce livre
+                <span>✓</span> Voix de référence active sur cet appareil
               </span>
               <button
                 type="button"
@@ -305,7 +315,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
         )}
 
         {/* Message de statut */}
-        {statusMessage && (
+        {statusMessage && !previewUrl && (
           <p className="text-xs text-[#1F2A5C] bg-[#E8ECFA] p-2.5 rounded-xl border border-[#1F2A5C]/20">
             {statusMessage}
           </p>

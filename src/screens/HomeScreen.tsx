@@ -45,15 +45,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
       return;
     }
 
-    // Vérifier hors-ligne
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      setMicState('erreur');
-      setErrorMessage(
-        'Vous êtes hors ligne. La reconnaissance vocale nécessite une connexion sur certains navigateurs. Vous pouvez saisir votre demande par écrit.'
-      );
-      return;
-    }
-
     // Vérifier consentement préalable
     const hasConsented = localStorage.getItem('oratama_mic_consent') === 'true';
     if (!hasConsented) {
@@ -61,17 +52,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
       return;
     }
 
-    startRecognition();
+    void startRecognition();
   };
 
-  const startRecognition = () => {
+  const startRecognition = async () => {
     if (!recognitionServiceRef.current) return;
 
     setLiveTranscript('');
+    setErrorMessage(null);
     setMicState('ecoute');
-    setStatusMessage('Écoute en cours… Parlez à voix haute.');
+    setStatusMessage('Connexion au micro… Parlez à voix haute.');
 
-    const started = recognitionServiceRef.current.start({
+    const started = await recognitionServiceRef.current.start({
       onStart: () => {
         setMicState('ecoute');
         setStatusMessage('Je vous écoute… Demandez un livre.');
@@ -87,18 +79,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
         setStatusMessage('Recherche en cours…');
         onSearch(transcript);
       },
-      onError: (_type, message) => {
-        setMicState('erreur');
-        setErrorMessage(message);
-        setStatusMessage(null);
+      onError: (type, message) => {
+        if (type === 'no-speech') {
+          // Simple silence : le micro fonctionne, ne pas bloquer l'interface en rouge
+          setMicState('inactif');
+          setStatusMessage('Aucune voix entendue. Touchez à nouveau le micro ou écrivez.');
+          setErrorMessage(null);
+        } else {
+          setMicState('erreur');
+          setErrorMessage(message);
+          setStatusMessage(null);
+        }
       },
       onEnd: () => {
         setMicState((prev) => (prev === 'ecoute' ? 'inactif' : prev));
       },
     });
 
-    if (!started) {
-      setMicState('erreur');
+    if (!started && micState !== 'erreur') {
+      setMicState('inactif');
     }
   };
 
@@ -111,7 +110,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
   const handleConsentAccepted = () => {
     localStorage.setItem('oratama_mic_consent', 'true');
     setShowConsentModal(false);
-    startRecognition();
+    void startRecognition();
   };
 
   const handleConsentCancelled = () => {
@@ -177,7 +176,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
           {micState === 'erreur' && (
             <>
               <span aria-hidden="true">⚠️</span>
-              <span>Micro : État d’erreur détecté</span>
+              <span>Micro : Problème d’accès détecté</span>
             </>
           )}
         </div>
@@ -232,7 +231,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <span className="text-[10px] font-black uppercase tracking-wider">Erreur</span>
+                <span className="text-[10px] font-black uppercase tracking-wider">Réessayer</span>
               </>
             ) : (
               <>
@@ -260,7 +259,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
           {micState === 'ecoute'
             ? 'Écoute en direct · Touchez pour terminer'
             : micState === 'erreur'
-            ? 'Micro indisponible · Utilisez le clavier ci-dessous'
+            ? 'Touchez le bouton rouge pour réessayer ou écrivez ci-dessous'
             : 'Touchez le micro ou écrivez votre demande'}
         </p>
 
@@ -294,7 +293,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
           >
             <p className="font-bold flex items-center gap-1.5 mb-1">
               <span>⚠️</span>
-              <span>Avis d’erreur vocale :</span>
+              <span>Information vocale :</span>
             </p>
             <p className="text-[#1B1B2A]">{errorMessage}</p>
           </div>

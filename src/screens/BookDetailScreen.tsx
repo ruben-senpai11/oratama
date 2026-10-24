@@ -292,7 +292,7 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
             onClick={() => onNavigate({ name: 'author', bookId: book.id })}
             className="text-[11px] text-[#1F2A5C] hover:underline font-semibold min-h-[44px] flex items-center"
           >
-            {recordedVoice ? 'Remplacer l’audio →' : 'Enregistrer ma voix d’auteur →'}
+            {recordedVoice ? 'Modifier la voix de référence →' : 'Enregistrer ma voix d’auteur →'}
           </button>
         </div>
 
