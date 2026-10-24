@@ -17,9 +17,9 @@ export const BookCover: React.FC<BookCoverProps> = ({ book, size = 'md', classNa
     .join('');
 
   const sizeClasses = {
-    sm: 'w-20 h-28 text-xs p-2',
-    md: 'w-32 h-44 text-sm p-3',
-    lg: 'w-48 h-64 text-base p-4',
+    sm: 'w-[120px] h-[120px] p-2.5',
+    md: 'w-32 h-44 p-3',
+    lg: 'w-48 h-64 p-4',
   }[size];
 
   return (
@@ -42,15 +42,26 @@ export const BookCover: React.FC<BookCoverProps> = ({ book, size = 'md', classNa
       />
 
       {/* En-tête de couverture : Tag genre et pastille */}
-      <div className="relative z-10 flex justify-between items-start gap-1">
+      <div className="relative z-10 flex justify-between items-center gap-1">
         <span
-          className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded backdrop-blur-sm"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', color: '#FFFFFF' }}
+          className="uppercase tracking-wider font-bold rounded backdrop-blur-sm truncate max-w-[70px]"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.32)',
+            color: '#FFFFFF',
+            fontSize: size === 'sm' ? '7.5px' : '9px',
+            padding: size === 'sm' ? '1.5px 4px' : '2px 6px',
+            lineHeight: 1.1,
+          }}
         >
           {book.genre}
         </span>
         <span
-          className="text-[8px] font-semibold px-1 py-0.5 rounded bg-black/40 text-amber-200"
+          className="font-semibold rounded bg-black/40 text-amber-200 shrink-0"
+          style={{
+            fontSize: size === 'sm' ? '7px' : '8px',
+            padding: size === 'sm' ? '1px 3.5px' : '2px 4px',
+            lineHeight: 1.1,
+          }}
           title="Exemple fictif"
         >
           Fictif
@@ -58,14 +69,14 @@ export const BookCover: React.FC<BookCoverProps> = ({ book, size = 'md', classNa
       </div>
 
       {/* Monogramme central */}
-      <div className="relative z-10 my-auto text-center">
+      <div className="relative z-10 my-0.5 text-center flex justify-center items-center">
         <div
-          className="inline-flex items-center justify-center rounded-full border-2 border-current/30 font-black tracking-widest"
+          className="inline-flex items-center justify-center rounded-full border-2 border-current/30 font-black tracking-widest shadow-inner"
           style={{
-            width: size === 'sm' ? '32px' : size === 'md' ? '46px' : '64px',
-            height: size === 'sm' ? '32px' : size === 'md' ? '46px' : '64px',
-            fontSize: size === 'sm' ? '12px' : size === 'md' ? '18px' : '24px',
-            backgroundColor: 'rgba(0, 0, 0, 0.15)',
+            width: size === 'sm' ? '24px' : size === 'md' ? '46px' : '64px',
+            height: size === 'sm' ? '24px' : size === 'md' ? '46px' : '64px',
+            fontSize: size === 'sm' ? '9.5px' : size === 'md' ? '18px' : '24px',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
           }}
         >
           {titleInitials || 'OT'}
@@ -74,10 +85,22 @@ export const BookCover: React.FC<BookCoverProps> = ({ book, size = 'md', classNa
 
       {/* Bas de couverture : Titre et Auteur */}
       <div className="relative z-10">
-        <p className="font-bold leading-tight line-clamp-2 drop-shadow-sm text-white">
+        <p
+          className="font-bold leading-tight line-clamp-2 drop-shadow-sm text-white"
+          style={{
+            fontSize: size === 'sm' ? '9.5px' : size === 'md' ? '13px' : '15px',
+            lineHeight: size === 'sm' ? 1.15 : 1.25,
+          }}
+        >
           {book.titre}
         </p>
-        <p className="text-[10px] sm:text-xs opacity-90 truncate mt-0.5 font-medium">
+        <p
+          className="opacity-90 font-medium text-white/95 line-clamp-2 mt-0.5"
+          style={{
+            fontSize: size === 'sm' ? '7.5px' : size === 'md' ? '11px' : '12px',
+            lineHeight: size === 'sm' ? 1.15 : 1.2,
+          }}
+        >
           {book.auteur}
         </p>
       </div>

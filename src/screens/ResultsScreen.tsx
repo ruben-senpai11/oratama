@@ -23,6 +23,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     extractActiveFilters(parsed)
   );
   const [recordedBookIds, setRecordedBookIds] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState<number>(20);
 
   // Vérifier quels livres ont un enregistrement d'auteur réel dans IndexedDB
   useEffect(() => {
@@ -42,10 +43,12 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
   const handleRemoveFilter = (filterId: string) => {
     setActiveFilters((prev) => prev.filter((f) => f.id !== filterId));
+    setVisibleCount(20);
   };
 
   const handleResetFilters = () => {
     setActiveFilters([]);
+    setVisibleCount(20);
   };
 
   return (
@@ -125,14 +128,14 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       {/* Liste des cartes ou état vide */}
       {scoredResults.length > 0 ? (
         <div className="space-y-3" role="feed" aria-label="Résultats de recherche">
-          {scoredResults.map(({ book, matchReasons }) => {
+          {scoredResults.slice(0, visibleCount).map(({ book, matchReasons }) => {
             const hasAuthorRecording = recordedBookIds.has(book.id);
 
             return (
               <article
                 key={book.id}
                 onClick={() => onNavigate({ name: 'book', bookId: book.id })}
-                className="bg-white rounded-2xl p-3.5 border border-[#E8E3DA] shadow-sm hover:border-[#1F2A5C]/40 transition-all cursor-pointer flex gap-3.5 group focus-within:ring-2 focus-within:ring-[#1F2A5C]"
+                className="bg-white rounded-2xl p-3.5 border border-[#E8E3DA] shadow-sm hover:border-[#1F2A5C]/40 transition-all cursor-pointer flex gap-3 group focus-within:ring-2 focus-within:ring-[#1F2A5C]"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -196,6 +199,19 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               </article>
             );
           })}
+
+          {/* Bouton pour charger plus de résultats */}
+          {scoredResults.length > visibleCount && (
+            <div className="text-center pt-2 pb-4">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + 25)}
+                className="min-h-[44px] px-6 py-2.5 rounded-xl bg-white border-2 border-[#1F2A5C] text-[#1F2A5C] text-xs font-bold hover:bg-[#1F2A5C] hover:text-white transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1F2A5C]"
+              >
+                Afficher plus de livres ({scoredResults.length - visibleCount} restants)
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         /* Cas sans résultat avec suggestions utiles */
@@ -207,7 +223,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             Aucun livre ne correspond exactement à tous vos critères combinés
           </h2>
           <p className="text-xs text-[#6B6B7A] leading-relaxed">
-            Nous avons cherché parmi les 12 ouvrages fictifs. Essayez de retirer certains filtres (comme la longueur ou le prix) ou découvrez nos suggestions ci-dessous.
+            Nous avons cherché parmi les 1 000 ouvrages fictifs. Essayez de retirer certains filtres (comme la longueur ou le prix) ou découvrez nos suggestions ci-dessous.
           </p>
 
           <div className="pt-2">
@@ -216,7 +232,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               onClick={handleResetFilters}
               className="min-h-[44px] px-4 py-2 bg-[#1F2A5C] text-white text-xs font-semibold rounded-xl hover:bg-[#161E42] transition-colors"
             >
-              Afficher tous les 12 livres disponibles
+              Afficher tous les livres disponibles
             </button>
           </div>
 

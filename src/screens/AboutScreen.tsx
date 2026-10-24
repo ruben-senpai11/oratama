@@ -30,7 +30,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onNavigate }) => {
           OraTama est un concept non officiel inspiré de Tama, ni affilié ni approuvé par Tama.
         </p>
         <p className="leading-relaxed text-[#6B6B7A]">
-          Ce prototype est une exploration de design et d’ingénierie front-end conçue pour être partagée publiquement afin de nourrir la réflexion sur l’accessibilité vocale en Afrique. Aucun logo, aucune couverture, aucune donnée ni aucun texte réel d’une plateforme existante n’ont été utilisés. L’ensemble des 12 livres, auteurs et résumés sont entièrement fictifs.
+          Ce prototype est une exploration de design et d’ingénierie front-end conçue pour être partagée publiquement afin de nourrir la réflexion sur l’accessibilité vocale en Afrique. Aucun logo, aucune couverture, aucune donnée ni aucun texte réel d’une plateforme existante n’ont été utilisés. L’ensemble des 1 000 livres, auteurs et résumés sont entièrement fictifs.
         </p>
         <p className="text-[#1B1B2A] font-medium pt-1 border-t border-[#E8E3DA]">
           Pour retirer ce concept, écrivez-moi :{' '}
