@@ -8,7 +8,7 @@
 
 ## 🌍 Contexte & Vision
 
-Je suis **Alban Honfovou**, architecte d’expériences numériques à Cotonou (Bénin).
+Je suis **Alban Honfovou**, product developer à Cotonou (Bénin), spécialisé en UX et en psychologie des utilisateurs.
 
 Avec **OraTama** (écriture exacte : *O* et *T* majuscules, sans espace ni tiret), j'ai souhaité matérialiser une vision produit concrète :  
 **Et si une bibliothèque numérique africaine permettait de demander un livre à voix haute, d’entendre l’auteur le présenter de vive voix pendant 30 secondes, et d’écouter un extrait lu à voix haute avec un surlignage synchrone ?**

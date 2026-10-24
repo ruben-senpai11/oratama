@@ -109,7 +109,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onNavigate }) => {
           Conçu par Alban Honfovou
         </p>
         <p className="text-[11px] text-[#5C5454]">
-          Architecte d’expériences numériques · Cotonou, Bénin
+          Product developer à Cotonou · Spécialisé en UX et en psychologie des utilisateurs
         </p>
       </div>
 
