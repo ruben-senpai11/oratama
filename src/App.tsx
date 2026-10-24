@@ -95,7 +95,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF6F1] text-[#1F1A1A] font-sans antialiased">
+    <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1B1B2A] font-sans antialiased">
       {/* Bandeau permanent obligatoire sur TOUS les écrans */}
       <PermanentBanner />
 
@@ -108,8 +108,8 @@ export const App: React.FC = () => {
           fallback={
             <div className="flex-1 flex items-center justify-center p-8 text-center" aria-live="polite">
               <div className="space-y-3">
-                <div className="w-8 h-8 rounded-full border-2 border-[#933B40] border-t-transparent animate-spin mx-auto" />
-                <p className="text-xs text-[#5C5454] font-medium">Chargement d’OraTama…</p>
+                <div className="w-8 h-8 rounded-full border-2 border-[#1F2A5C] border-t-transparent animate-spin mx-auto" />
+                <p className="text-xs text-[#6B6B7A] font-medium">Chargement d’OraTama…</p>
               </div>
             </div>
           }
@@ -154,7 +154,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Pied de page discret */}
-      <footer className="w-full bg-[#FAF6F1] border-t border-[#E5DCD3] py-3 text-center text-[10px] text-[#5C5454] font-medium">
+      <footer className="w-full bg-[#FBF8F3] border-t border-[#E8E3DA] py-3 text-center text-[10px] text-[#6B6B7A] font-medium">
         <div className="max-w-md mx-auto px-4">
           OraTama · Prototype d’expérimentation vocale mobile-first
         </div>

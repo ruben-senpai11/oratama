@@ -58,11 +58,11 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
   if (!book) {
     return (
       <div className="flex-1 max-w-md mx-auto w-full px-4 py-8 text-center space-y-4">
-        <p className="text-sm font-bold text-[#1F1A1A]">Livre non trouvé</p>
+        <p className="text-sm font-bold text-[#1B1B2A]">Livre non trouvé</p>
         <button
           type="button"
           onClick={() => onNavigate({ name: 'home' })}
-          className="min-h-[44px] px-4 py-2 bg-[#933B40] text-white text-xs font-semibold rounded-xl"
+          className="min-h-[44px] px-4 py-2 bg-[#1F2A5C] text-white text-xs font-semibold rounded-xl"
         >
           Retourner à l’accueil
         </button>
@@ -105,30 +105,30 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
   return (
     <div className="flex-1 max-w-md mx-auto w-full px-4 py-4 space-y-4 pb-12 flex flex-col">
       {/* En-tête titre livre */}
-      <div className="flex items-center justify-between border-b border-[#E5DCD3] pb-3">
+      <div className="flex items-center justify-between border-b border-[#E8E3DA] pb-3">
         <div className="min-w-0 pr-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#933B40]">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#1F2A5C]">
             Lecture à voix haute
           </span>
-          <h1 className="text-sm sm:text-base font-bold text-[#1F1A1A] truncate">
+          <h1 className="text-sm sm:text-base font-bold text-[#1B1B2A] truncate">
             {book.titre}
           </h1>
-          <p className="text-xs text-[#5C5454] truncate">
+          <p className="text-xs text-[#6B6B7A] truncate">
             {book.auteur} ({book.pays})
           </p>
         </div>
         <button
           type="button"
           onClick={() => onNavigate({ name: 'book', bookId: book.id })}
-          className="text-xs text-[#933B40] hover:underline font-semibold shrink-0 min-h-[44px] flex items-center px-2"
+          className="text-xs text-[#1F2A5C] hover:underline font-semibold shrink-0 min-h-[44px] flex items-center px-2"
         >
           Fiche →
         </button>
       </div>
 
       {/* Sélecteur de langue avec mentions explicites */}
-      <section aria-labelledby="lang-heading" className="bg-white rounded-xl p-3 border border-[#E5DCD3] shadow-sm space-y-2">
-        <h2 id="lang-heading" className="text-xs font-bold uppercase tracking-wider text-[#5C5454]">
+      <section aria-labelledby="lang-heading" className="bg-white rounded-xl p-3 border border-[#E8E3DA] shadow-sm space-y-2">
+        <h2 id="lang-heading" className="text-xs font-bold uppercase tracking-wider text-[#6B6B7A]">
           Langue de lecture
         </h2>
 
@@ -137,7 +137,7 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
           <div
             role="radio"
             aria-checked="true"
-            className="flex items-center justify-center p-2 rounded-lg bg-[#933B40] text-white text-xs font-bold shadow-sm"
+            className="flex items-center justify-center p-2 rounded-lg bg-[#1F2A5C] text-white text-xs font-bold shadow-sm"
           >
             <span>Français</span>
             <span className="ml-1 text-[10px] bg-white/20 px-1 py-0.5 rounded">Actif</span>
@@ -178,18 +178,18 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
         </div>
 
         {/* Phrase obligatoire d'explication honnête */}
-        <p className="text-[11px] text-[#8C8282] italic leading-normal pt-1">
+        <p className="text-[11px] text-[#6B6B7A] italic leading-normal pt-1">
           Les voix de synthèse pour le fon, le yoruba et le goun ne sont pas encore prises en charge ici par les synthétiseurs navigateurs.
         </p>
       </section>
 
       {/* Barre d'outils audio & typographie */}
-      <div className="bg-white rounded-2xl p-3 border border-[#E5DCD3] shadow-sm space-y-3">
+      <div className="bg-white rounded-2xl p-3 border border-[#E8E3DA] shadow-sm space-y-3">
         {/* Ligne 1 : Contrôles de lecture */}
         <div className="flex items-center justify-between">
           {/* Vitesse : 0.8, 1, 1.2 */}
           <div className="flex items-center gap-1" role="group" aria-label="Vitesse de lecture">
-            <span className="text-[11px] font-bold text-[#5C5454] mr-1">Vitesse :</span>
+            <span className="text-[11px] font-bold text-[#6B6B7A] mr-1">Vitesse :</span>
             {[0.8, 1.0, 1.2].map((r) => (
               <button
                 key={r}
@@ -198,8 +198,8 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
                 aria-pressed={playbackRate === r}
                 className={`min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg transition-colors ${
                   playbackRate === r
-                    ? 'bg-[#933B40] text-white'
-                    : 'bg-[#FAF6F1] text-[#5C5454] hover:bg-[#EFE8DE]'
+                    ? 'bg-[#1F2A5C] text-white'
+                    : 'bg-[#FBF8F3] text-[#6B6B7A] hover:bg-[#EFEAE1]'
                 }`}
               >
                 {r === 1 ? '1×' : `${r}×`}
@@ -214,11 +214,11 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
               onClick={() => setFontSizeLevel((prev) => Math.max(0, prev - 1))}
               disabled={fontSizeLevel === 0}
               aria-label="Diminuer la taille du texte"
-              className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg bg-[#FAF6F1] hover:bg-[#EFE8DE] disabled:opacity-40 text-xs font-black text-[#1F1A1A] transition-colors"
+              className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg bg-[#FBF8F3] hover:bg-[#EFEAE1] disabled:opacity-40 text-xs font-black text-[#1B1B2A] transition-colors"
             >
               A−
             </button>
-            <span className="text-xs font-bold text-[#5C5454] px-1 select-none">
+            <span className="text-xs font-bold text-[#6B6B7A] px-1 select-none">
               A
             </span>
             <button
@@ -226,7 +226,7 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
               onClick={() => setFontSizeLevel((prev) => Math.min(fontSizes.length - 1, prev + 1))}
               disabled={fontSizeLevel === fontSizes.length - 1}
               aria-label="Augmenter la taille du texte"
-              className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg bg-[#FAF6F1] hover:bg-[#EFE8DE] disabled:opacity-40 text-sm font-black text-[#1F1A1A] transition-colors"
+              className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg bg-[#FBF8F3] hover:bg-[#EFEAE1] disabled:opacity-40 text-sm font-black text-[#1B1B2A] transition-colors"
             >
               A+
             </button>
@@ -234,13 +234,13 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
         </div>
 
         {/* Ligne 2 : Boutons Précédent / Play-Pause / Suivant */}
-        <div className="flex items-center justify-center gap-3 pt-1 border-t border-[#E5DCD3]/60">
+        <div className="flex items-center justify-center gap-3 pt-1 border-t border-[#E8E3DA]">
           <button
             type="button"
             onClick={handlePrevious}
             disabled={currentSentenceIndex <= 0}
             aria-label="Phrase précédente"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-[#FAF6F1] hover:bg-[#EFE8DE] disabled:opacity-30 text-[#1F1A1A] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-[#FBF8F3] hover:bg-[#EFEAE1] disabled:opacity-30 text-[#1B1B2A] transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -251,7 +251,7 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
             type="button"
             onClick={handleTogglePlay}
             aria-label={isPlaying && !isPaused ? 'Mettre en pause' : 'Démarrer la lecture à voix haute'}
-            className="min-h-[48px] px-6 rounded-2xl bg-[#933B40] hover:bg-[#752A2E] text-white font-bold text-sm transition-all shadow-md flex items-center gap-2 active:scale-95"
+            className="min-h-[48px] px-6 rounded-2xl bg-[#1F2A5C] hover:bg-[#161E42] text-white font-bold text-sm transition-all shadow-md flex items-center gap-2 active:scale-95"
           >
             {isPlaying && !isPaused ? (
               <>
@@ -275,7 +275,7 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
             onClick={handleNext}
             disabled={currentSentenceIndex >= sentences.current.length - 1}
             aria-label="Phrase suivante"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-[#FAF6F1] hover:bg-[#EFE8DE] disabled:opacity-30 text-[#1F1A1A] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-[#FBF8F3] hover:bg-[#EFEAE1] disabled:opacity-30 text-[#1B1B2A] transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -284,23 +284,23 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
         </div>
 
         {/* Indicateur de phrase en cours */}
-        <p className="text-[11px] text-center text-[#8C8282] font-medium">
+        <p className="text-[11px] text-center text-[#6B6B7A] font-medium">
           Phrase {currentSentenceIndex + 1} sur {sentences.current.length}
         </p>
 
         {errorMessage && (
-          <p className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+          <p className="text-xs text-[#B3261E] bg-[#FDF0ED] p-2.5 rounded-xl border border-[#B3261E]/30">
             {errorMessage}
           </p>
         )}
       </div>
 
-      {/* Zone de lecture du texte avec phrases et surlignage */}
+      {/* Zone de lecture du texte avec phrases et surlignage exact #FCE9C4 */}
       <section
         aria-label="Texte de l'extrait avec surlignage en cours"
-        className="flex-1 bg-white rounded-2xl p-5 border border-[#E5DCD3] shadow-sm overflow-y-auto"
+        className="flex-1 bg-white rounded-2xl p-5 border border-[#E8E3DA] shadow-sm overflow-y-auto"
       >
-        <div className={`${fontSizes[fontSizeLevel]} ${lineHeightClasses[fontSizeLevel]} text-[#1F1A1A] space-y-2`}>
+        <div className={`${fontSizes[fontSizeLevel]} ${lineHeightClasses[fontSizeLevel]} text-[#1B1B2A] space-y-2`}>
           {sentences.current.map((sentence, index) => {
             const isCurrent = index === currentSentenceIndex && (isPlaying || isPaused);
 
@@ -308,10 +308,10 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({ bookId, onNavigate }
               <span
                 key={index}
                 onClick={() => handleSentenceClick(index)}
-                className={`cursor-pointer transition-colors duration-200 rounded px-1 py-0.5 inline ${
+                className={`cursor-pointer transition-colors duration-200 rounded px-1.5 py-0.5 inline ${
                   isCurrent
-                    ? 'bg-[#933B40] text-white font-semibold ring-2 ring-[#933B40] shadow-sm'
-                    : 'hover:bg-[#FAF6F1]'
+                    ? 'bg-[#FCE9C4] text-[#1B1B2A] font-semibold border-b-2 border-[#E9A23B] shadow-sm'
+                    : 'hover:bg-[#FBF8F3]'
                 }`}
                 title="Touchez pour lire cette phrase"
               >

@@ -5,22 +5,23 @@ export default {
     extend: {
       colors: {
         ora: {
-          wine: '#933B40',
-          wineDark: '#752A2E',
-          wineLight: '#A8454B',
-          wineSoft: '#F6EAEB',
-          cream: '#FAF6F1',
-          creamDark: '#EFE8DE',
-          creamCard: '#FFFFFF',
-          ink: '#1F1A1A',
-          inkMuted: '#5C5454',
-          inkLight: '#8C8282',
-          border: '#E5DCD3',
-          borderStrong: '#CBBFBA',
-          accentGold: '#D97706',
-          accentGreen: '#15803D',
-          greenBg: '#DCFCE7',
-          tagBg: '#F3ECE3',
+          // Palette officielle OraTama
+          primary: '#1F2A5C', // Indigo primaire
+          primaryDark: '#161E42',
+          primaryLight: '#2D3B78',
+          primarySoft: '#E8ECFA',
+          voice: '#E9A23B', // Accent voix ocre (jamais en texte sur fond clair)
+          voiceDark: '#C9821F',
+          voiceSoft: '#FDF3E3',
+          bg: '#FBF8F3', // Fond crème
+          bgCard: '#FFFFFF',
+          text: '#1B1B2A', // Texte principal
+          textSecondary: '#6B6B7A', // Texte secondaire
+          highlight: '#FCE9C4', // Surlignage de la phrase lue
+          error: '#B3261E', // Erreur
+          errorSoft: '#FDF0ED',
+          border: '#E8E3DA',
+          borderStrong: '#D0C9BD',
         },
       },
       fontFamily: {

@@ -24,7 +24,15 @@ Ce concept est taillé sur mesure pour la réalité des lecteurs francophones af
 ## ⚡ Stack technique
 
 - **Framework & Bundler** : Vite + React 18 + TypeScript en mode strict (`noImplicitAny`, `noUnusedLocals`, `noUnusedParameters`, aucun `any`).
-- **Styling** : Tailwind CSS avec palette accessible contrastée (couleur principale `#933B40`, fond crème `#FAF6F1`, texte `#1F1A1A`).
+- **Styling & Charte graphique** : Tailwind CSS avec charte inclusive :
+  - **Primaire** : indigo `#1F2A5C`
+  - **Accent voix** : ocre `#E9A23B` (jamais en texte sur fond clair, réservé aux boutons, badges et accents visuels avec texte contrasté)
+  - **Fond** : crème doux `#FBF8F3`
+  - **Texte principal** : `#1B1B2A` (contraste > 12:1)
+  - **Texte secondaire** : `#6B6B7A` (contraste AA certifié)
+  - **Surlignage de la phrase lue** : `#FCE9C4`
+  - **Erreur** : `#B3261E`
+  - **Micro multi-signaux** : l'état du micro (inactif, écoute, erreur) se lit toujours par une **icône** ET un **mot**, jamais par la couleur seule.
 - **Navigation** : Routeur hash léger, réactif aux boutons précédent/suivant du système et résilient hors connexion.
 - **Audio & Voix** :
   - **Web Speech API** : `SpeechRecognition` / `webkitSpeechRecognition` pour l'analyse d'intention et `SpeechSynthesis` découpé par phrases.
@@ -115,7 +123,7 @@ Audit réalisé avec le moteur officiel Lighthouse 13.5 en émulation mobile str
 
 | Catégorie Lighthouse | Score réel obtenu | Seuil attendu | Statut |
 | :--- | :---: | :---: | :---: |
-| **Performance** | **100 / 100** (1.00) | ≥ 90 | ✅ Atteint |
+| **Performance** | **99 / 100** (0.99) | ≥ 90 | ✅ Atteint |
 | **Accessibilité** | **100 / 100** (1.00) | ≥ 95 | ✅ Atteint |
 | **Bonnes pratiques** | **100 / 100** (1.00) | — | ✅ Atteint |
 | **SEO** | **100 / 100** (1.00) | — | ✅ Atteint |

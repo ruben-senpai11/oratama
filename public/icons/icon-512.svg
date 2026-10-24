@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="96" fill="#933B40"/>
-  <circle cx="256" cy="256" r="170" fill="none" stroke="#FAF6F1" stroke-width="16" opacity="0.4"/>
-  <path d="M192 310 C 170 278, 170 234, 192 202 M160 336 C 128 288, 128 224, 160 176" fill="none" stroke="#FAF6F1" stroke-width="14" stroke-linecap="round"/>
-  <path d="M320 310 C 342 278, 342 234, 320 202 M352 336 C 384 288, 384 224, 352 176" fill="none" stroke="#FAF6F1" stroke-width="14" stroke-linecap="round"/>
-  <text x="256" y="282" font-family="system-ui, -apple-system, sans-serif" font-size="90" font-weight="800" fill="#FAF6F1" text-anchor="middle" letter-spacing="2">OT</text>
+  <rect width="512" height="512" rx="96" fill="#1F2A5C"/>
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#E9A23B" stroke-width="14" opacity="0.4"/>
+  <path d="M192 310 C 170 278, 170 234, 192 202 M160 336 C 128 288, 128 224, 160 176" fill="none" stroke="#E9A23B" stroke-width="14" stroke-linecap="round"/>
+  <path d="M320 310 C 342 278, 342 234, 320 202 M352 336 C 384 288, 384 224, 352 176" fill="none" stroke="#E9A23B" stroke-width="14" stroke-linecap="round"/>
+  <text x="256" y="282" font-family="system-ui, -apple-system, sans-serif" font-size="90" font-weight="800" fill="#FBF8F3" text-anchor="middle" letter-spacing="2">OT</text>
 </svg>

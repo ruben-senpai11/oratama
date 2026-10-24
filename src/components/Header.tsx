@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate }) => 
   };
 
   return (
-    <header className="bg-[#FAF6F1] border-b border-[#E5DCD3] sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
+    <header className="bg-[#FBF8F3] border-b border-[#E8E3DA] sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
       <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {showBack && (
@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate }) => 
               type="button"
               onClick={handleBack}
               aria-label="Retour à l'écran précédent"
-              className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center rounded-full text-[#1F1A1A] hover:bg-[#EFE8DE] transition-colors"
+              className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center rounded-full text-[#1B1B2A] hover:bg-[#EFEAE1] transition-colors"
             >
               <svg
                 className="w-5 h-5"
@@ -47,14 +47,14 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate }) => 
           <button
             type="button"
             onClick={() => onNavigate({ name: 'home' })}
-            className="flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[#933B40] rounded-lg py-1 px-1 -ml-1 text-left"
+            className="flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[#1F2A5C] rounded-lg py-1 px-1 -ml-1 text-left"
             aria-label="OraTama Vocal — Accueil"
           >
-            {/* Typographie système textuelle distincte de tout logo externe */}
-            <span className="font-extrabold text-xl tracking-tight text-[#933B40]">
-              Ora<span className="text-[#1F1A1A]">Tama</span>
+            {/* Typographie textuelle distincte */}
+            <span className="font-extrabold text-xl tracking-tight text-[#1F2A5C]">
+              Ora<span className="text-[#1B1B2A]">Tama</span>
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#933B40] bg-[#F6EAEB] px-1.5 py-0.5 rounded-full border border-[#933B40]/20">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#1F2A5C] bg-[#E8ECFA] px-1.5 py-0.5 rounded-full border border-[#1F2A5C]/20">
               Vocal
             </span>
           </button>
@@ -67,8 +67,8 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate }) => 
             onClick={() => onNavigate({ name: 'home' })}
             className={`min-h-[44px] px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors flex items-center ${
               currentScreen.name === 'home'
-                ? 'text-[#933B40] bg-[#F6EAEB]'
-                : 'text-[#5C5454] hover:text-[#1F1A1A] hover:bg-[#EFE8DE]'
+                ? 'text-[#1F2A5C] bg-[#E8ECFA]'
+                : 'text-[#6B6B7A] hover:text-[#1B1B2A] hover:bg-[#EFEAE1]'
             }`}
           >
             Demander
@@ -79,8 +79,8 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate }) => 
             onClick={() => onNavigate({ name: 'author' })}
             className={`min-h-[44px] px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors flex items-center ${
               currentScreen.name === 'author'
-                ? 'text-[#933B40] bg-[#F6EAEB]'
-                : 'text-[#5C5454] hover:text-[#1F1A1A] hover:bg-[#EFE8DE]'
+                ? 'text-[#1F2A5C] bg-[#E8ECFA]'
+                : 'text-[#6B6B7A] hover:text-[#1B1B2A] hover:bg-[#EFEAE1]'
             }`}
           >
             Auteur
@@ -91,8 +91,8 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate }) => 
             onClick={() => onNavigate({ name: 'about' })}
             className={`min-h-[44px] px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors flex items-center ${
               currentScreen.name === 'about'
-                ? 'text-[#933B40] bg-[#F6EAEB]'
-                : 'text-[#5C5454] hover:text-[#1F1A1A] hover:bg-[#EFE8DE]'
+                ? 'text-[#1F2A5C] bg-[#E8ECFA]'
+                : 'text-[#6B6B7A] hover:text-[#1B1B2A] hover:bg-[#EFEAE1]'
             }`}
           >
             À propos
