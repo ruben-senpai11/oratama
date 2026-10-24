@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate }) => 
             type="button"
             onClick={() => onNavigate({ name: 'home' })}
             className="flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[#933B40] rounded-lg py-1 px-1 -ml-1 text-left"
-            aria-label="OraTama accueil"
+            aria-label="OraTama Vocal — Accueil"
           >
             {/* Typographie système textuelle distincte de tout logo externe */}
             <span className="font-extrabold text-xl tracking-tight text-[#933B40]">

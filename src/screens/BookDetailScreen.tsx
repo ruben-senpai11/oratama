@@ -174,7 +174,7 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
           <p className="text-xs font-semibold text-[#5C5454]">
             Par {book.auteur}
           </p>
-          <p className="text-xs text-[#8C8282]">
+          <p className="text-xs text-[#5C5454]">
             Origine : <span className="font-semibold text-[#1F1A1A]">{book.pays}</span>
           </p>
           <div className="pt-1 flex flex-wrap gap-2 text-xs font-bold text-[#1F1A1A]">

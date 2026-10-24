@@ -154,7 +154,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Pied de page discret */}
-      <footer className="w-full bg-[#FAF6F1] border-t border-[#E5DCD3] py-3 text-center text-[10px] text-[#8C8282]">
+      <footer className="w-full bg-[#FAF6F1] border-t border-[#E5DCD3] py-3 text-center text-[10px] text-[#5C5454] font-medium">
         <div className="max-w-md mx-auto px-4">
           OraTama · Prototype d’expérimentation vocale mobile-first
         </div>

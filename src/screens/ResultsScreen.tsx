@@ -101,14 +101,14 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="text-xs text-[#8C8282] hover:text-[#1F1A1A] underline px-2 py-1"
+                className="text-xs text-[#5C5454] hover:text-[#1F1A1A] underline px-2 py-1"
               >
                 Tout effacer
               </button>
             </div>
           </div>
         ) : (
-          <p className="text-xs text-[#8C8282] italic">
+          <p className="text-xs text-[#5C5454] italic">
             Aucun filtre spécifique actif (tous les livres sont affichés).
           </p>
         )}
@@ -119,7 +119,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         <span className="font-semibold">
           {scoredResults.length} {scoredResults.length > 1 ? 'livres trouvés' : 'livre trouvé'}
         </span>
-        <span className="text-[11px] text-[#8C8282]">Classés par pertinence</span>
+        <span className="text-[11px] text-[#5C5454]">Classés par pertinence</span>
       </div>
 
       {/* Liste des cartes ou état vide */}

@@ -214,7 +214,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
               {statusMessage}
             </p>
           ) : (
-            <p className="text-xs text-[#8C8282]">
+            <p className="text-xs text-[#5C5454]">
               La transcription apparaîtra ici en temps réel…
             </p>
           )}
