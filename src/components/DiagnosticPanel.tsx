@@ -10,6 +10,8 @@ import {
   BrowserDetectionResult,
   SpeechRecognitionService,
 } from '../utils/speechRecognition';
+import { isGeminiConfigured } from '../utils/geminiAudioService';
+import { GeminiKeyModal } from './GeminiKeyModal';
 
 interface DiagnosticPanelProps {
   onClose?: () => void;
@@ -23,6 +25,8 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
   const [testTranscript, setTestTranscript] = useState<string>('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [activeTab, setActiveTab] = useState<'status' | 'errors' | 'logs'>('status');
+  const [showGeminiModal, setShowGeminiModal] = useState(false);
+  const [isGeminiActive, setIsGeminiActive] = useState(false);
 
   const testServiceRef = useRef<SpeechRecognitionService | null>(null);
 
@@ -32,6 +36,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
     setBrowserInfo(bInfo);
     const perm = await getMicrophonePermissionStatus();
     setMicPermission(perm);
+    setIsGeminiActive(isGeminiConfigured());
   };
 
   useEffect(() => {
@@ -342,6 +347,38 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                 </div>
               )}
             </div>
+
+            {/* 5. Moteur Vocal Intelligent (Gemini 2.0 Flash) */}
+            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E8E3DA] space-y-2">
+              <span className="text-[10px] uppercase font-bold text-[#6B6B7A] tracking-wider block">
+                5. Reconnaissance Vocale Gemini 2.0 Flash (Google AI)
+              </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      isGeminiActive ? 'bg-emerald-500' : 'bg-gray-400'
+                    }`}
+                  />
+                  <span className="font-bold text-xs text-[#1B1B2A]">
+                    {isGeminiActive ? 'Active (Écoute libre sans limite)' : 'Désactivée (Micro standard)'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowGeminiModal(true)}
+                  className="min-h-[32px] px-2.5 py-1 rounded-lg border border-[#1F2A5C] text-[#1F2A5C] text-[10px] font-bold hover:bg-[#1F2A5C] hover:text-white transition-colors"
+                >
+                  {isGeminiActive ? 'Modifier la clé' : 'Configurer'}
+                </button>
+              </div>
+              <p className="text-[10px] text-[#6B6B7A] leading-tight">
+                {isGeminiActive
+                  ? 'Capture audio continue MediaRecorder + transcription multimodale Gemini 2.0 Flash sans limite de durée.'
+                  : 'Obtenez votre clé gratuite sur aistudio.google.com/app/apikey pour une écoute sans limite de temps.'}
+              </p>
+            </div>
           </div>
         )}
 
@@ -434,6 +471,14 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
           Actualiser
         </button>
       </div>
+
+      <GeminiKeyModal
+        isOpen={showGeminiModal}
+        onClose={() => setShowGeminiModal(false)}
+        onKeySaved={() => {
+          setIsGeminiActive(isGeminiConfigured());
+        }}
+      />
     </aside>
   );
 };

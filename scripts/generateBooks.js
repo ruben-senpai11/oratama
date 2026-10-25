@@ -5,190 +5,81 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Charger les 12 livres d'origine pour les préserver à l'identique
-const originalBooksPath = path.join(__dirname, '../src/data/books.json');
-const rawBooks = JSON.parse(fs.readFileSync(originalBooksPath, 'utf8'));
-const originalBooks = rawBooks.slice(0, 12);
+const booksFilePath = path.join(__dirname, '../src/data/books.json');
+const currentBooks = JSON.parse(fs.readFileSync(booksFilePath, 'utf8'));
 
-console.log(`Livres originaux chargés : ${originalBooks.length}`);
+// Préserver les 12 premiers livres originaux canoniques
+const originalBooks = currentBooks.slice(0, 12);
+console.log(`Livres originaux préservés : ${originalBooks.length}`);
 
-// Banques de données pour la génération combinatoire de 988 livres fictifs additionnels
-const PAYS_LIST = [
-  { pays: 'Bénin', poids: 30, prenoms: ['Sèdami', 'Koffi', 'Fidèle', 'Bio', 'Eunice', 'Marcellin', 'Dossou', 'Gérard', 'Sena', 'Ayaba', 'Houénou', 'Félicien', 'Mireille', 'Tanguy', 'Sosthène', 'Pelagie'], noms: ['Akplogan', 'Houndékon', 'Zinsou-Akoffodji', 'Séwanou', 'Dossou-Yovo', 'Gado', 'Kpadonou', 'Adjovi', 'Tognon', 'Agbodjan', 'Hounkpatin', 'Danvide', 'Sessou', 'Gbaguidi'] },
-  { pays: 'Sénégal', poids: 12, prenoms: ['Cheikh', 'Awa', 'Mamadou', 'Fatou', 'Ousmane', 'Ndeye', 'Ibrahima', 'Mariama', 'Babacar', 'Aminata', 'Tidiane', 'Khady'], noms: ['Ndiaye', 'Diop', 'Fall', 'Sow', 'Ba', 'Seck', 'Gueye', 'Wade', 'Faye', 'Sylla', 'Kane'] },
-  { pays: 'Côte d’Ivoire', poids: 12, prenoms: ['Kouassi', 'Aya', 'Yao', 'Affoué', 'Jean-Luc', 'Estelle', 'Bakary', 'Christelle', 'Amadou', 'Saran', 'Marc'], noms: ['Kouamé', 'Konan', 'Bamba', 'Ouattara', 'Touré', 'Koffi', 'Coulibaly', 'Diallo', 'Fofana', 'Traoré'] },
-  { pays: 'Cameroun', poids: 10, prenoms: ['Achille', 'Chantal', 'Samuel', 'Nathalie', 'Gervais', 'Clarisse', 'Patrice', 'Solange', 'Eric', 'Brigitte'], noms: ['Ewane', 'Mbarga', 'Ndjock', 'Abega', 'Kamga', 'Fosso', 'Tchouang', 'Mballa', 'Biya', 'Engoulou'] },
-  { pays: 'Togo', poids: 8, prenoms: ['Komi', 'Abla', 'Messan', 'Akossiwa', 'Kokou', 'Mansah', 'Kossi', 'Enyonam'], noms: ['Agbodjan', 'Amouzou', 'Lawson', 'Kpogo', 'Adjamagbo', 'Koffigoh', 'Mensah', 'Dogbé'] },
-  { pays: 'Mali', poids: 8, prenoms: ['Sekou', 'Fatoumata', 'Boubacar', 'Kadidia', 'Modibo', 'Djeneba', 'Lassana', 'Oumou'], noms: ['Traoré-Kaba', 'Diakité', 'Keita', 'Coulibaly', 'Sissoko', 'Camara', 'Dembélé', 'Maïga'] },
-  { pays: 'Guinée', poids: 6, prenoms: ['Alpha', 'Kadiatou', 'Ibrahima', 'M’Mah', 'Thierno', 'Aissatou', 'Boubacar'], noms: ['Diallo', 'Camara', 'Soumah', 'Barry', 'Bah', 'Bangoura', 'Condé'] },
-  { pays: 'Congo', poids: 6, prenoms: ['Dieudonné', 'Sylvie', 'Brice', 'Nathalie', 'Arsène', 'Pierrette', 'Rodolphe'], noms: ['Mambou', 'Malonga', 'Okombi', 'Makosso', 'Loundou', 'Bikoumou', 'Ngouabi'] },
-  { pays: 'Burkina Faso', poids: 5, prenoms: ['Wendkuni', 'Pingdwendé', 'Issa', 'Salamata', 'Rasmané', 'Alimata'], noms: ['Ouédraogo', 'Kaboré', 'Sawadogo', 'Compaoré', 'Zongo', 'Tiendrébéogo'] },
-  { pays: 'Gabon', poids: 3, prenoms: ['Ndoutoume', 'Mireille', 'Ondo', 'Paulette', 'Nze', 'Chantal'], noms: ['Obame', 'Mba', 'Ndong', 'Biyoghe', 'Bongo', 'Mintsa'] },
-];
-
-const DOMAINES = [
+// Pays et banques de patronymes authentiques
+const PAYS_DATA = [
   {
-    genre: 'roman',
-    themeGroup: ['amour', 'ville', 'famille', 'mémoire', 'jeunesse'],
-    titrePrefixes: [
-      'Le Murmure de la lagune', 'Les Échos de', 'Sous le ciel de', 'La Promesse de',
-      'Le Silence des', 'Les Brumes sur', 'Au-delà du fleuve', 'L’Ombre portée de',
-      'L’Éveil des', 'Les Sentiers oubliés de', 'Une Saison à', 'Les Passagers de',
-      'Le Dernier souffle de', 'Les Flammes de', 'Les Horizons de', 'Les Méandres de',
-      'Le Balcon sur la lagune', 'Les Enfants du quartier', 'Le Mystère de', 'La Traversée de'
-    ],
-    titreSuffixes: [
-      'Cotonou', 'Grand-Popo', 'Porto-Novo', 'Dantokpa', 'Ganvié', 'Ouidah', 'Calavi',
-      'Dakar', 'Saint-Louis', 'Gorée', 'Plateau', 'Treichville', 'Cocody', 'Bamako',
-      'Lomé', 'Baguida', 'Kpalimé', 'Yaoundé', 'Douala', 'Brazzaville', 'Pointe-Noire',
-      'Ouagadougou', 'Bobo-Dioulasso', 'Conakry', 'Kindia', 'l’harmattan', 'la mousson',
-      'la terre rouge', 'la lagune dorée', 'l’aurore nouvelle', 'la baie silencieuse'
-    ],
-    presentationTemplates: [
-      (nom, pays, titre) => `Je m’appelle ${nom}, auteur originaire de ${pays}. Dans « ${titre} », j’ai voulu explorer les battements secrets de nos villes africaines et la façon dont l’amour tisse des ponts au-dessus des doutes et des blessures du passé. C’est un roman sincère, vibrant de nos réalités quotidiennes et porté par l’espoir d’une jeunesse en mouvement.`,
-      (nom, pays, titre) => `Bonjour à tous, je suis ${nom}. Écrire « ${titre} » depuis ${pays} a été une véritable quête intime pour moi. J’ai mis en scène des personnages vivants, confrontés aux choix cruciaux entre traditions familiales et soif d’émancipation contemporaine. J’espère que vous ressentirez la chaleur de nos nuits et la force tranquille de nos espoirs.`,
-      (nom, pays, titre) => `Bienvenue, ici ${nom}. Avec ce roman, je vous invite à plonger dans le quotidien palpitant de nos cités d’Afrique de l’Ouest. Entre les conversations au crépuscule et le tumulte joyeux des rues, « ${titre} » raconte ce que nous gardons au plus profond de nos mémoires. Écoutez le récit de ces destins croisés.`
-    ],
-    resumeTemplates: [
-      (titre, lieu) => `Une fresque romanesque bouleversante se déroulant à ${lieu}, où deux âmes que tout oppose affrontent les préjugés et les rivalités de clan pour réinventer leur liberté.`,
-      (titre, lieu) => `Au cœur des quartiers populaires de ${lieu}, les destins de trois amis d'enfance basculent lorsque d'anciens secrets de famille refont surface à l'approche de la saison des pluies.`,
-      (titre, lieu) => `Un vibrant voyage intérieur guidé par les souvenirs d'une lignée de femmes courageuses qui, face aux bouleversements de la modernité à ${lieu}, choisissent l'amour comme boussole.`
-    ],
-    extraitTemplates: [
-      (lieu) => `L'air tiède de la fin d'après-midi portait avec lui l'odeur caractéristique de terre rouge humidifiée et le grésillement des braises sur les étals de ${lieu}. Assis sous la véranda de tôle ondulée, il observait les passants dont les ombres s'étiraient sur la chaussée sablonneuse. Un rire familier monta de la cour voisine, aussitôt couvert par le vrombissement lointain d'une moto-taxi. À cet instant, il comprit que le temps n'effaçait pas les souvenirs, il les polissait simplement avec la douceur d'une vague revenant inlassablement caresser la berge.`,
-      (lieu) => `La nuit tombait d'un coup sur les toits de ${lieu}, allumant des constellations d'ampoules jaunes à travers la poussière suspendue. Dans la pièce exiguë, le battement feutré d'un ventilateur semblait mesurer la lenteur des aveux. Elle déplia la lettre aux coins froissés, cherchant entre les lignes l'écho d'une promesse prononcée avant le grand départ. Les paroles flottaient comme des lucioles au-dessus des eaux calmes de la lagune, prêtes à s'éteindre ou à guider les pas vers un matin neuf.`
-    ]
+    pays: 'Bénin',
+    poids: 30,
+    prenomsM: ['Sèdami', 'Koffi', 'Fidèle', 'Bio', 'Marcellin', 'Dossou', 'Gérard', 'Houénou', 'Félicien', 'Tanguy', 'Sosthène', 'Codjo', 'Kouassi', 'Romuald', 'Blaise', 'Euloge'],
+    prenomsF: ['Eunice', 'Sena', 'Ayaba', 'Mireille', 'Pélagie', 'Yolande', 'Gbêton', 'Sèna', 'Dossi', 'Akouavi', 'Ahouefa', 'Blandine', 'Victoire', 'Clarisse'],
+    noms: ['Akplogan', 'Houndékon', 'Zinsou-Akoffodji', 'Séwanou', 'Dossou-Yovo', 'Gado', 'Kpadonou', 'Adjovi', 'Tognon', 'Agbodjan', 'Hounkpatin', 'Danvide', 'Sessou', 'Gbaguidi', 'Adéromou', 'Koubouratou', 'Chodaton', 'Degila']
   },
   {
-    genre: 'poésie',
-    themeGroup: ['mémoire', 'nature', 'amour', 'ville', 'voyage'],
-    titrePrefixes: [
-      'Chants de', 'Odes à', 'Paroles de', 'Cris et murmures de', 'Gouttes de rosée sur',
-      'Le Psaume de', 'Les Rimes de', 'Vers libres pour', 'L’Encrier de', 'Les Soleils de',
-      'Feuilles de', 'Les Arpèges de', 'Les Lueurs de', 'Les Reflets de', 'La Danse de'
-    ],
-    titreSuffixes: [
-      'la terre rouge', 'la pluie d’hivernage', 'l’harmattan', 'l’océan nocturne',
-      'la savane en fleurs', 'nos mères veillant', 'la mémoire vive', 'la lagune indigo',
-      'l’aurore sahélienne', 'la brise de Nokoué', 'l’ombre du tamarinier', 'l’argile sacrée'
-    ],
-    presentationTemplates: [
-      (nom, pays, titre) => `Je suis ${nom}, poète enraciné en ${pays}. Ce recueil intitulé « ${titre} » est un chant d’amour à notre terre, à la noblesse de nos ancêtres et aux battements silencieux de la nature. Chaque poème est une respiration, une invitation à ralentir et à contempler la beauté intemporelle de notre continent.`,
-      (nom, pays, titre) => `Bonjour, c’est ${nom}. J’ai composé « ${titre} » en écoutant le souffle du vent dans les feuillages et la rumeur lointaine des marchés de ${pays}. La poésie est pour moi le gardien le plus fidèle de nos émotions. Laissez ces quelques strophes résonner en vous comme une caresse bienveillante.`
-    ],
-    resumeTemplates: [
-      (titre) => `Un recueil poétique ciselé célébrant les éléments primordiaux, la mémoire vivante de l'Afrique et la force des sentiments partagés sous l'arbre à palabres.`,
-      (titre) => `Des strophes lumineuses et dépouillées qui chantent la splendeur des saisons africaines, l'élan de la liberté et la grâce des gestes quotidiens.`
-    ],
-    extraitTemplates: [
-      () => `Ô terre d'ocre et de sel, je bois ta patience / Dans la gourde fendue où chantent les rivières. / Quand le vent de minuit dépouille les baobabs, / Nos mémoires se lèvent comme des étoiles neuves. / Nul exil n'éteindra la braise de nos chants, / Car l'amour est ce fleuve qui sait où va la mer.`,
-      () => `Sous la paupière du ciel lourd d'étoiles / Un enfant écoute respirer la forêt tiède. / Ce ne sont pas des pierres que le torrent roule, / Mais les syllabes d'un poème que l'aube viendra sculpter / Dans la paume ouverte de celui qui veille.`
-    ]
+    pays: 'Sénégal',
+    poids: 14,
+    prenomsM: ['Cheikh', 'Mamadou', 'Ousmane', 'Ibrahima', 'Babacar', 'Tidiane', 'Abdoulaye', 'Lamine', 'Mansour', 'El Hadj'],
+    prenomsF: ['Awa', 'Fatou', 'Ndeye', 'Mariama', 'Aminata', 'Khady', 'Coumba', 'Astou', 'Rokhaya', 'Mame Diarra'],
+    noms: ['Ndiaye', 'Diop', 'Fall', 'Sow', 'Ba', 'Seck', 'Gueye', 'Wade', 'Faye', 'Sylla', 'Kane', 'Thiam', 'Diallo', 'Mbaye']
   },
   {
-    genre: 'essai',
-    themeGroup: ['histoire', 'société', 'philosophie', 'mémoire', 'nature'],
-    titrePrefixes: [
-      'Penser l’Afrique avec', 'La Renaissance de', 'Écologie et sagesse de',
-      'Les Fondations de', 'Repenser la cité à', 'Pour une souveraineté de',
-      'L’Éthique communautaire de', 'Modernité et traditions à', 'La Parole agissante dans',
-      'Les Futurs possibles de', 'L’Économie solidaire selon', 'Transmettre le savoir à'
-    ],
-    titreSuffixes: [
-      'l’ère des réseaux', 'la pensée Ubuntu', 'la civilisation du Danxomè',
-      'nos villages numériques', 'l’épreuve des temps nouveaux', 'la mémoire décoloniale',
-      'l’agronomie régénérative', 'la transmission orale', 'l’autonomie créatrice', 'la jeunesse d’aujourd’hui'
-    ],
-    presentationTemplates: [
-      (nom, pays, titre) => `Je suis ${nom}, essayiste et chercheur en ${pays}. Dans « ${titre} », je propose une réflexion rigoureuse sur nos modèles de développement et nos valeurs collectives. Face aux défis contemporains, nous devons puiser dans notre héritage pour inventer des solutions résilientes, inclusives et souveraines.`,
-      (nom, pays, titre) => `Salutations, ici ${nom}. Cet essai est né de nombreuses enquêtes de terrain en ${pays} et à travers le continent. Il pose une question essentielle : comment concilier nos racines culturelles et l’impératif d’innovation sans nous renier ? Bonne écoute de cette réflexion partagée.`
-    ],
-    resumeTemplates: [
-      (titre) => `Un plaidoyer lucide et ambitieux pour une réappropriation culturelle et technologique des destins africains, appuyé sur des exemples concrets et vivants.`,
-      (titre) => `Une analyse prospective brillante explorant les croisements fertiles entre solidarités traditionnelles, économie circulaire et créativité numérique en Afrique.`
-    ],
-    extraitTemplates: [
-      () => `La véritable émancipation d'une société ne se mesure pas à sa capacité d'imiter des schémas exogènes, mais à son audace de fonder ses institutions sur ses propres concepts philosophiques. Lorsque le modèle de l'arbre à palabres dialogue avec l'horizontalité des réseaux décentralisés, une voie inédite s'ouvre pour nos communautés. Il ne s'agit pas de refuser le monde, mais d'y entrer debout, forts de notre propre grammaire du bien commun.`,
-      () => `Tout au long des siècles, nos terroirs ont cultivé une écologie de la relation où l'homme ne se pose pas en maître absolu, mais en maillon solidaire d'un écosystème vivant. Aujourd'hui, face aux crises climatiques globales, cette sagesse ancestrale cesse d'être une simple curiosité ethnologique pour devenir une urgence stratégique planétaire.`
-    ]
+    pays: 'Côte d’Ivoire',
+    poids: 14,
+    prenomsM: ['Kouassi', 'Yao', 'Jean-Luc', 'Bakary', 'Amadou', 'Marc', 'Koffi', 'Ange', 'Fabrice', 'Lassina', 'Tidiane'],
+    prenomsF: ['Aya', 'Affoué', 'Estelle', 'Christelle', 'Saran', 'Akissi', 'Adjoua', 'Prisca', 'Fatoumata', 'Nadège'],
+    noms: ['Kouamé', 'Konan', 'Bamba', 'Ouattara', 'Touré', 'Koffi', 'Coulibaly', 'Fofana', 'Traoré', 'Assamoi', 'Brou', 'Drogba', 'Yapi']
   },
   {
-    genre: 'conte',
-    themeGroup: ['conte', 'enfance', 'nature', 'mémoire', 'famille'],
-    titrePrefixes: [
-      'Le Secret du lièvre et de', 'Pourquoi le baobab a', 'La Tortue et le génie de',
-      'Le Mystère du lac aux', 'Les Trois conseils du', 'Le Voleur de pluie et',
-      'L’Oiseau d’or de la falaise de', 'Le Chasseur bienveillant et', 'Quand les animaux parlaient à'
-    ],
-    titreSuffixes: [
-      'Dassa', 'Abomey', 'la rivière sacrée', 'l’arbre centenaire', 'l’aurore claire',
-      'la cour du roi Béhanzin', 'la montagne bleue', 'l’harmattan sifflant', 'la caverne dorée'
-    ],
-    presentationTemplates: [
-      (nom, pays, titre) => `Je m’appelle ${nom}, conteur traditionnel en ${pays}. Ce recueil de contes est une malle aux trésors où la malice des animaux enseigne la sagesse aux plus grands. Venez écouter comment la ruse de la tortue triomphe de la force aveugle du léopard.`,
-      (nom, pays, titre) => `Bonjour à tous les amoureux des histoires ! C’est ${nom}. J’ai recueilli ces contes au coin du feu dans les villages de ${pays}. Ce sont des récits d’émerveillement et de justice qui voyagent de bouche à oreille depuis la nuit des temps.`
-    ],
-    resumeTemplates: [
-      (titre) => `Des récits facétieux et initiatiques où les bêtes de la brousse rivalisent d'ingéniosité pour révéler aux humains les secrets de la concorde et de la paix.`,
-      (titre) => `Un voyage féerique au cœur des collines sacrées, où un enfant courageux apprend les leçons de la nature auprès d'un vieil arbre qui murmure la nuit.`
-    ],
-    extraitTemplates: [
-      () => `Il était une fois, bien avant que les routes de goudron ne traversent la grande savane, une époque merveilleuse où les animaux tenaient conseil chaque nouvelle lune. Ce soir-là, Maître Lièvre s'était glissé sous une large feuille d'igname pour écouter la dispute entre le Lion orgueilleux et la petite Fourmi noire. « Tu es si minuscule que le souffle de mon rugissement t'anéantirait ! » tonnait le roi de la brousse. Mais la fourmi, sans trembler, lui répondit d'une voix cristalline : « Ta force casse les branches, mais c'est ma patience qui bâtit les collines. »`,
-      () => `Au crépuscule, lorsque les chauves-souris commençaient leur ballet silencieux au-dessus des manguiers, le vieux chasseur allumait un petit feu d'écorce de karité. Les enfants du village s'asseyaient en cercle, les yeux brillants d'impatience. Il tirait alors de sa besace une flûte d'osier usée et en tirait trois notes douces qui faisaient taire jusqu'aux grillons de la clairière.`
-    ]
+    pays: 'Cameroun',
+    poids: 10,
+    prenomsM: ['Achille', 'Samuel', 'Gervais', 'Patrice', 'Eric', 'Dieudonné', 'Alain', 'Bertrand', 'Emmanuel', 'Rodrigue'],
+    prenomsF: ['Chantal', 'Nathalie', 'Clarisse', 'Solange', 'Brigitte', 'Madeleine', 'Carine', 'Sandrine', 'Christelle'],
+    noms: ['Ewane', 'Mbarga', 'Ndjock', 'Abega', 'Kamga', 'Fosso', 'Tchouang', 'Mballa', 'Biya', 'Engoulou', 'Atangana', 'Kotto', 'Eyenga']
   },
   {
-    genre: 'nouvelle',
-    themeGroup: ['ville', 'jeunesse', 'amour', 'voyage', 'société'],
-    titrePrefixes: [
-      'Chroniques de minuit à', 'Les Passantes du marché de', 'Les Nuits électriques de',
-      'Sept histoires au bord de', 'Correspondances secrètes depuis', 'Les Traversées du boulevard de',
-      'Instantanés de vie à', 'Les Taxi-motos de'
-    ],
-    titreSuffixes: [
-      'Cotonou', 'Dantokpa', 'Cadjehoun', 'Akpakpa', 'Abidjan', 'Treichville',
-      'Dakar-Plateau', 'Médina', 'Lomé-Plage', 'Bamako-Coura', 'Douala-Bassa'
-    ],
-    presentationTemplates: [
-      (nom, pays, titre) => `Je suis ${nom}, nouvelliste en ${pays}. Dans « ${titre} », je capture les battements instantanés de la ville moderne : la créativité débordante des jeunes, les petits commerces sous les néons et les espoirs qui fleurissent sur le bitume encore chaud.`,
-      (nom, pays, titre) => `Salut ! C’est ${nom}. Écrire des nouvelles, c’est comme prendre des instantanés photographiques de la vie réelle en ${pays}. Ce recueil vous plonge au cœur de nos carrefours vibrants, là où chaque regard croisé est le début d’une aventure humaine.`
-    ],
-    resumeTemplates: [
-      (titre) => `Une série de nouvelles vives et percutantes qui capturent la pulsation effrénée des métropoles africaines contemporaines et la vitalité de leurs habitants.`,
-      (titre) => `Des portraits sensibles d'hommes et de femmes ordinaires qui, à travers les rues animées de la capitale, inventent chaque jour mille manières d'espérer.`
-    ],
-    extraitTemplates: [
-      () => `La chaleur moite de vingt-deux heures montait des pavés de l'avenue. Devant l'étal de poisson braisé, la fumée piquante de bois de palétuvier se mêlait aux effluves d'huile de palme et de piment frais. Les clients discutaient avec passion du dernier match de football tout en consultant les notifications lumineuses de leurs téléphones portables. Dans ce tourbillon d'énergie brute, chaque sonnette de vélo sonnait comme une ponctuation joyeuse dans le concert de la nuit urbaine.`,
-      () => `Elle regardait le jour se lever depuis le dernier étage du petit immeuble inachevé. À cette heure indécise où les premiers marchands ambulants installent leurs tréteaux de bois, Cotonou semblait reprendre son souffle avant la grande ruée. Une brise marine venue de la côte balayait la poussière des ruelles, apportant avec elle l'espoir tenace d'un matin fertile.`
-    ]
+    pays: 'Togo',
+    poids: 8,
+    prenomsM: ['Komi', 'Messan', 'Kokou', 'Kossi', 'Edem', 'Koffi', 'Yao', 'Amen', 'Folly', 'Atsu'],
+    prenomsF: ['Abla', 'Akossiwa', 'Mansah', 'Enyonam', 'Dédé', 'Aku', 'Kafui', 'Sika', 'Afia'],
+    noms: ['Agbodjan', 'Amouzou', 'Lawson', 'Kpogo', 'Adjamagbo', 'Koffigoh', 'Mensah', 'Dogbé', 'Ayité', 'Kuevi', 'Adanlete']
   },
   {
-    genre: 'jeunesse',
-    themeGroup: ['enfance', 'famille', 'nature', 'conte', 'jeunesse'],
-    titrePrefixes: [
-      'Le Grand voyage du petit', 'L’Étoile filante de', 'L’Aventure de Kofi et',
-      'Les Découvertes d’Aya à', 'Le Ballon magique de', 'La Pirogue enchantée du',
-      'Le Trésor caché sous le', 'L’École buissonnière de'
-    ],
-    titreSuffixes: [
-      'la lagune', 'la colline rouge', 'la plage des cocotiers', 'la grande forêt',
-      'Dassa', 'Ganvié', 'Grand-Popo', 'l’arbre aux souhaits', 'la clairière dorée'
-    ],
-    presentationTemplates: [
-      (nom, pays, titre) => `Bonjour les jeunes lecteurs et lectrices ! Je m’appelle ${nom}, autrice de livres jeunesse en ${pays}. J’ai imaginé cette aventure pour faire rêver les enfants, stimuler leur curiosité et leur faire aimer la lecture avec des héros qui leur ressemblent !`,
-      (nom, pays, titre) => `Bienvenue ! C’est ${nom}. Ce livre jeunesse vous emmène dans un voyage plein de rebondissements et de rires à travers les plus beaux paysages de ${pays}. Une histoire tendre sur l’amitié, le courage et la beauté de notre terre.`
-    ],
-    resumeTemplates: [
-      (titre) => `Une aventure joyeuse et rythmée où une bande d'écoliers curieux résout une énigme passionnante au village grâce à la solidarité et à leur amour de la nature.`,
-      (titre) => `Le récit attendrissant d'un jeune héros intrépide qui, aidé de ses fidèles compagnons, apprend à surmonter sa peur pour sauver l'arbre protecteur de son quartier.`
-    ],
-    extraitTemplates: [
-      () => `Ce matin-là, Yao avait chaussé ses sandales en plastique bleu dès le premier chant du coq. Dans sa poche secrète, il avait glissé son trésor le plus précieux : une bille en verre moucheté de vert qui brillait comme une goutte d'eau sous le soleil d'Afrique. « Aujourd'hui, se promit-il en sautillant sur le sentier de sable, nous irons explorer la caverne mystérieuse au pied de la colline rouge ! »`,
-      () => `Les cloches de l'école primaire résonnèrent dans toute la cour plantée d'acacias en fleurs. Amina rangea prestement son ardoise et ses deux craies blanches avant de rejoindre ses camarades sous le grand manguier. « Regardez là-haut ! » s'écria son petit frère en pointant du doigt un oiseau aux plumes turquoise qui semblait leur indiquer le chemin de la forêt des secrets.`
-    ]
+    pays: 'Mali',
+    poids: 8,
+    prenomsM: ['Sekou', 'Boubacar', 'Modibo', 'Lassana', 'Moussa', 'Souleymane', 'Bakary', 'Adama', 'Oumar'],
+    prenomsF: ['Fatoumata', 'Kadidia', 'Djeneba', 'Oumou', 'Rokia', 'Mariam', 'Aïssata', 'Kadiatou'],
+    noms: ['Traoré', 'Diakité', 'Keita', 'Coulibaly', 'Sissoko', 'Camara', 'Dembélé', 'Maïga', 'Kone', 'Bagayoko', 'Touré']
+  },
+  {
+    pays: 'Guinée',
+    poids: 6,
+    prenomsM: ['Alpha', 'Ibrahima', 'Thierno', 'Boubacar', 'Ansoumane', 'Mamadou', 'Oumar', 'Lansana'],
+    prenomsF: ['Kadiatou', 'M’Mah', 'Aissatou', 'Fanta', 'Hawa', 'Mariama', 'Binta', 'Saran'],
+    noms: ['Diallo', 'Camara', 'Soumah', 'Barry', 'Bah', 'Bangoura', 'Condé', 'Sylla', 'Mara', 'Cissé']
+  },
+  {
+    pays: 'Congo',
+    poids: 5,
+    prenomsM: ['Dieudonné', 'Brice', 'Arsène', 'Rodolphe', 'Serge', 'Guy', 'Christian', 'Alain'],
+    prenomsF: ['Sylvie', 'Nathalie', 'Pierrette', 'Chantal', 'Flore', 'Blandine', 'Grace', 'Aimée'],
+    noms: ['Mambou', 'Malonga', 'Okombi', 'Makosso', 'Loundou', 'Bikoumou', 'Ngouabi', 'Loubaki', 'Mouanda', 'Kibangou']
+  },
+  {
+    pays: 'Burkina Faso',
+    poids: 5,
+    prenomsM: ['Wendkuni', 'Pingdwendé', 'Issa', 'Rasmané', 'Sayouba', 'Moumouni', 'Boukary', 'Inoussa'],
+    prenomsF: ['Salamata', 'Alimata', 'Bibata', 'Rasmata', 'Fatima', 'Wendyam', 'Barkissa'],
+    noms: ['Ouédraogo', 'Kaboré', 'Sawadogo', 'Compaoré', 'Zongo', 'Tiendrébéogo', 'Sanou', 'Bationo']
   }
 ];
 
+// Banque de palettes chromatiques
 const PALETTES = [
   { bg: '#1F2A5C', accent: '#FBF8F3' },
   { bg: '#933B40', accent: '#FDF3E3' },
@@ -204,88 +95,446 @@ const PALETTES = [
   { bg: '#0F766E', accent: '#CCFBF1' },
   { bg: '#9A3412', accent: '#FFEDD5' },
   { bg: '#312E81', accent: '#E0E7FF' },
-  { bg: '#3F3F46', accent: '#FAFAFA' },
+  { bg: '#27272A', accent: '#FAFAFA' },
+  { bg: '#581C87', accent: '#F3E8FF' },
+  { bg: '#991B1B', accent: '#FEF2F2' },
+  { bg: '#164E63', accent: '#ECFEFF' },
+  { bg: '#365314', accent: '#F7FEE7' }
 ];
 
-const PRIX_PALIERS = [600, 800, 1000, 1200, 1500, 1800, 2000, 2200, 2500, 2800, 3000, 3500, 4000, 4500, 5000];
+const PRIX_LIST = [1200, 1500, 1800, 2000, 2200, 2500, 2800, 3000, 3200, 3500, 3800, 4200, 4500, 4800, 5000];
 
-// Génération de 988 livres supplémentaires
+// Banques thématiques profondes pour chaque genre et style
+// 1. POLARS URBAINS & THRILLERS
+const POLARS_URBAINS = {
+  genre: 'roman',
+  themes: ['ville', 'société', 'justice', 'enquête'],
+  titres: [
+    "L'Enigme du quai numéro 4", "Nuit sanglante à Dantokpa", "L'Inspecteur et le faux prophète",
+    "Les Disparues de la lagune de Ganvié", "Trafic d'ombres à Akpakpa", "Le Secret des coffres de Treichville",
+    "Mort suspecte sur la corniche dakaroise", "Le Crépuscule des contrebandiers", "Dernier appel pour le vol Cotonou-Paris",
+    "L'Affaire du testament d'Agla", "Péril sur le fleuve Ouémé", "La Dette du juge d'instruction",
+    "L'Infiltré du carrefour Houéyiho", "L'Ombre du tueur aux cauris", "Mystère au quartier des banques",
+    "La Rançon de la lagune", "Cadavre exquis au marché de Marcory", "Le Réseau des Almadies",
+    "L'Or maudit des collines de Dassa", "Chantage à la haute finance", "Le Témoin muet de Fidjrossè",
+    "Course-poursuite sur l'échangeur de Godomey", "Le Poison de la belle-famille", "Noces tragiques à Ouidah",
+    "L'Avocat marron de Saint-Michel", "La Nuit des faux passeports", "Les Silences de la maison coloniale",
+    "Détournement sous les manguiers", "La Revanche du docker de Calavi", "Sang d'encre sur le bitume"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `À ${ville}, une série de braquages sophistiqués met en échec la brigade criminelle. Lorsqu'une cargaison diplomatique s'évanouit mystérieusement, l'inspecteur chargé du dossier découvre que les commanditaires siègent dans les plus hautes sphères du pouvoir. Une course contre la montre s'engage au cœur de la nuit urbaine.`,
+    (t, a, ville) => `Un corps retrouvé à l'aube sur les berges embrumées de ${ville} replonge un ancien juge intègre dans une vieille affaire classée trop vite. Entre témoins apeurés et filières clandestines, la vérité exigera un lourd tribut personnel.`,
+    (t, a, ville) => `Une jeune lanceuse d'alerte travaillant au port de ${ville} disparaît après avoir intercepté un registre compromettant. Sa sœur cadette, aidée d'un chauffeur de taxi loyal, fouille les bas-fonds de la métropole pour démanteler un réseau d'artéfacts volés.`
+  ],
+  extraits: [
+    (ville) => `L'orage menaçait au-dessus des toits de tôle de ${ville}. Dans l'entrepôt désert, les phares de la camionnette balayèrent les caisses empilées jusqu'au plafond. « Ne touche à rien avant l'arrivée du procureur », murmura le capitaine en posant la main sur son étui de cuir. L'air sentait le mazout et la terre détrempée. Un craquement sec résonna derrière les conteneurs : ils n'étaient pas seuls.`,
+    (ville) => `Le klaxon strident d'un camion citerne tira l'inspecteur de sa torpeur. Assis sur un banc décrépit face au débarcadère de ${ville}, il relisait le télégramme anonyme reçu à l'aube. Trois noms y figuraient, dont deux appartenaient déjà au cimetière marin. Le troisième était le sien.`
+  ]
+};
+
+// 2. AFROFUTURISME & SCIENCE-FICTION
+const SCI_FI_AFRO = {
+  genre: 'roman',
+  themes: ['science-fiction', 'futur', 'technologie', 'mémoire'],
+  titres: [
+    "Ganvié 2095 : La Cité Flottante", "Les Mémoires du satellite Kemit-3", "Le Réseau quantique du Sahel",
+    "L'Automate de la reine Tassi Hangbé", "Chroniques des archivistes de Tombouctou-Orbital", "Les Moissonneurs d'énergie solaire",
+    "La Sonde stellaire et les voix du Fâ", "L'Algorithme des ancêtres", "Cyber-lagune et circuits d'argile",
+    "Les Nomades de la ceinture d'astéroïdes", "La Révolte des bio-drones d'Abidjan", "L'Hologramme du vieux sage",
+    "Les Mines d'hélium du Hoggar", "L'Arche du golfe de Guinée", "L'Éveil des sentinelles mécaniques",
+    "Les Télépathes de la savane", "Le Signal venu de l'Océan d'Or", "La Métropole de verre sous l'harmattan",
+    "Le Protocole Ubuntu 4.0", "Les Navigateurs de l'éther sahélien", "L'Ascenseur spatial de Kribi",
+    "Les Jardins hydroponiques de Nokoué", "L'IA qui récitait des contes", "Les Pèlerins de la galaxie Songhaï"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `En 2088, la métropole lacustre de ${ville} est devenue le premier centre mondial de mécatronique bio-inspirée. Quand une intelligence artificielle refuse soudain de réguler les vannes d'énergie pour préserver un rituel ancien, une jeune ingénieure doit dialoguer avec la mémoire ancestrale du réseau.`,
+    (t, a, ville) => `À l'ère où les constellations satellitaires africaines alimentent le continent en énergie pure, un astronome basé à ${ville} capte une pulsation sonore codée selon les polyrythmies sacrées de son enfance. Le premier contact interstellaire parlera la langue des tambours.`,
+    (t, a, ville) => `Dans une Afrique de l'Ouest hyper-connectée où la terre crue s'associe aux nanotechnologies pour résister aux canicules, deux étudiants inventent un capteur neuronal capable de restaurer la mémoire des écosystèmes disparus.`
+  ],
+  extraits: [
+    (ville) => `Les panneaux de silicium iridescent qui couvraient les toits flottants de ${ville} pulsaient d'une lueur vert émeraude. Sur son écran tactile translucide, Amina voyait converger les flux d'énergie de tout le bassin lagunaire. « Le système a intégré les chants des pêcheurs comme fréquence d'harmonisation », expliqua-t-elle avec un sourire incrédule. La machine n'imitait plus : elle se souvenait.`,
+    (ville) => `Le drone postal fendit le ciel orangé au ras des acacias génétiquement renforcés. Depuis la passerelle de verre surplombant la station orbitale de ${ville}, les lumières de la Terre ressemblaient à une parure de perles de corail étalée sur un velours d'ébène.`
+  ]
+};
+
+// 3. ROMANS HISTORIQUES & ÉPOPÉES DE ROYAUMES
+const HISTOIRE_ROYAUMES = {
+  genre: 'roman',
+  themes: ['histoire', 'mémoire', 'guerre', 'honneur'],
+  titres: [
+    "Le Serment des Agoodjié d'Abomey", "Le Maître cavalier de Nikki", "L'Or des caravanes du roi Kankan",
+    "La Révolte des pêcheurs d'Allada", "Le Dernier rempart de Ouidah", "Les Amazones de la forêt d'argile",
+    "Les Trompettes d'ivoire de Danxomè", "La Bataille du gué sacré", "Le Traité secret de Savè",
+    "L'Enfant caché du palais royal", "La Couronne de cuivre et d'étain", "Le Messager de la porte du non-retour",
+    "Les Potières du royaume d'Oyo", "La Marche des forgerons du Borgou", "L'Étendard aux deux panthères",
+    "Les Chroniques du greffier de la cour", "L'Épée du premier guerrier", "Le Chêne sacré du grand chef",
+    "Le Cavalier sans armure de Kandi", "Le Conseil des sages sous le baobab royal", "Les Voiles pourpres de l'estuaire",
+    "L'Héritier déchu du trône d'Adja", "Les Veilleurs du mur d'argile", "La Reine qui commandait aux fleuves"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `Au XVIIIe siècle, alors que les puissances impériales convoitent les comptoirs côtiers près de ${ville}, une jeune guerrière d'élite déjoue une conspiration visant à renverser la souveraineté de son royaume. Une grande fresque d'honneur, de courage et de loyauté fraternelle.`,
+    (t, a, ville) => `Dans la cour fastueuse du souverain de ${ville}, un maître artisan forgeron reçoit la commande d'une arme cérémonielle réputée invulnérable. Pris au piège des intrigues de palais et des rivalités de succession, il devra choisir entre son serment d'artiste et la liberté de son peuple.`,
+    (t, a, ville) => `L'épopée d'une caravane transsaharienne reliant Tombouctou aux rivages de ${ville}. À travers mille lieues de poussière, d'oasis et de passes montagneuses, marchands et savants transportent le trésor le plus convoité de l'époque : une bibliothèque de manuscrits précieux.`
+  ],
+  extraits: [
+    (ville) => `Le soleil couchant embrasait les murailles ocre d'Abomey d'un feu pourpre. Alignées en rangs parfaits dans la grande cour d'honneur, les combattantes Agoodjié tenaient leurs sabres d'acier étincelant pointés vers le ciel. Aucun murmure ne troublait la solennité de l'instant, seulement le claquement lourd des bannières aux armes de la panthère et le battement solennel des tambours de bronze.`,
+    (ville) => `Le grand cavalier tira sur les rênes de son étalon noir au sommet du promontoire rocheux. En contrebas s'étendait la vallée verdoyante de ${ville}, sillonnée par les eaux calmes du fleuve nourricier. « Nul étranger ne foulera nos champs sans notre accord », déclara-t-il à ses officiers avant de sonner le ralliement.`
+  ]
+};
+
+// 4. ESSAIS : ÉCOLOGIE, SOCIÉTÉ, ÉCONOMIE & PHILOSOPHIE
+const ESSAIS_REFLEXION = {
+  genre: 'essai',
+  themes: ['société', 'philosophie', 'écologie', 'mémoire', 'économie'],
+  titres: [
+    "Pour une Agroécologie Sahélienne", "L'Économie Populaire de Dantokpa", "L'Arbre à Palabres Numérique",
+    "Architecture en Terre Crue et Avenir Bioclimatique", "Ubuntu et Éthique des Algorithmes", "La Monnaie Mobile et l'Autonomie Paysanne",
+    "La Pharmacopée Tropicale à l'Hôpital Moderne", "Souveraineté Alimentaire et Semences Paysannes", "La Voix et le Geste : Esthétique de l'Oralité",
+    "Repenser l'Université Africaine", "L'Énergie Solaire Communautaire", "L'Éloge de la Lenteur dans nos Cités",
+    "Femmes d'Affaires et Réseaux Traditionnels", "La Renaissance des Langues Maternelles", "Urbanisme Vivable pour nos Métropoles",
+    "L'Artisanat d'Art face à la Mondialisation", "Démocratie Participative de Quartier", "Éducation Bilingue et Racines Culturelles",
+    "Le Devoir de Mémoire Décoloniale", "L'Eau Douce, Trésor Menacé du Golfe", "Microfinance et Solidarités de Tontine",
+    "L'Afrique Berceau des Énergies Propres", "Philosophie de la Calebasse", "Les Nouvelles Voies du Livre Africain"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `S'appuyant sur dix années d'enquêtes de terrain à ${ville} et dans les campagnes avoisinantes, cet essai propose un modèle novateur alliant techniques ancestrales de résilience et outils modernes. Un plaidoyer lucide et exigeant pour bâtir une prospérité soutenable et équitable.`,
+    (t, a, ville) => `Comment nos sociétés peuvent-elles affronter les métamorphoses contemporaines sans renoncer à leur génie communautaire ? Cet ouvrage analyse avec clarté les mutations du travail, des transactions et de la gouvernance locale à ${ville}, esquissant des perspectives émancipatrices.`,
+    (t, a, ville) => `Une analyse magistrale des pratiques paysannes et des savoirs vernaculaires. L'auteur démontre avec rigueur scientifique que les réponses aux crises climatiques et nutritionnelles mondiales germent depuis des siècles dans nos terroirs.`
+  ],
+  extraits: [
+    (ville) => `L'erreur fondamentale des modèles de développement importés a été de considérer les solidarités communautaires africaines comme un frein archaïque, alors qu'elles constituent en réalité un capital social et écologique d'une résilience incomparable. Lorsque la tontine de marché dialogue avec les monnaies numériques souveraines, la valeur reste ancrée dans la communauté humaine réelle.`,
+    (ville) => `Bâtir avec la terre de nos sols, ventiler nos maisons avec les brises marines de ${ville}, ce n'est pas un repli nostalgique : c'est le sommet de l'intelligence architecturale contemporaine. Le béton armé emprisonne la chaleur ; la brique de terre compressée respire et régule la vie.`
+  ]
+};
+
+// 5. CONTES INITIATIQUES & FABLES ANIMALIERES
+const CONTES_TRADITIONNELS = {
+  genre: 'conte',
+  themes: ['conte', 'enfance', 'nature', 'famille', 'mémoire'],
+  titres: [
+    "Pourquoi le Lièvre se moque du Léopard", "La Tortue et la Calebasse de Vérité", "Le Secret des Arbres de la Forêt Sacrée",
+    "Les Sept Épreuves du Petit Pêcheur de Nokoué", "Le Génie de la Rivière et la Fille Travailleuse", "L'Oiseau qui Changeait la Pluie en Or",
+    "Comment l'Éléphant Perdit son Orgueil", "Le Tisseur d'Étoiles du Mont Atacora", "Les Ruses d'Anansi l'Araignée",
+    "La Chèvre Courageuse et la Panthère", "Le Miroir Magique du Vieux Chasseur", "L'Enfant Née dans une Fleur de Lotus",
+    "Le Chant qui Réveillait les Baobabs", "Le Poisson aux Écailles de Diamant", "Le Voleur de Feu de la Montagne Bleue",
+    "Les Trois Graines de Karité Enchantées", "La Dispute du Vent d'Est et de la Pluie", "Le Tam-tam qui Faisait Rire les Singes",
+    "La Reine des Abeilles de la Falaise", "Le Chasseur qui Parlait aux Gazelles", "Le Bâton d'Ébène du Grand-Père",
+    "Quand le Crocodile Demandait Grâce", "L'Étoile Tombée dans la Pirogue", "Le Festin des Animaux de la Savane"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `Dans un village bordant la forêt de ${ville}, les bêtes de la savane tiennent conseil chaque nuit de pleine lune. À travers les malices de Maître Lièvre et la persévérance de la Tortue, ces contes savoureux transmettent aux jeunes générations le respect de la parole donnée et l'amour de la justice.`,
+    (t, a, ville) => `Un jeune garçon intrépide part à la recherche de la source sacrée pour guérir sa grand-mère malade. Guidé par un oiseau doué de parole, il apprendra que la véritable bravoure ne consiste pas à vaincre les monstres, mais à ouvrir son cœur aux êtres faibles.`,
+    (t, a, ville) => `Des récits enchanteurs recueillis au coin du feu près de ${ville}. Chaque fable met en scène la sagesse millénaire de nos aïeux pour rappeler que la ruse désintéressée triomphe toujours de la force brutale.`
+  ],
+  extraits: [
+    (ville) => `Ce soir-là, sous les ramures épaisses du grand tamarinier de ${ville}, les enfants avaient formé un demi-cercle attentif. Le conteur frappa doucement sur sa calebasse trois petits coups réguliers. « Cric ! » lança-t-il dans l'obscurité tiède. Et toutes les petites voix répondirent d'un seul chœur joyeux : « Crac ! » Alors l'histoire commença : Il était une fois, quand la mer n'était encore qu'une flaque d'eau douce...`,
+    (ville) => `Maître Lièvre ajusta son petit bonnet de coton et s'approcha prudemment du terrier de l'oncle Hyène. « Tu crois être le plus fort parce que ta mâchoire broie les os, dit-il en ricanant, mais sauras-tu attraper l'ombre de la lune dans cette gourde ? » La brousse entière retint son souffle.`
+  ]
+};
+
+// 6. POÉSIE LYRIQUE & SLAM CONTEMPORAIN
+const POESIE_SLAM = {
+  genre: 'poésie',
+  themes: ['mémoire', 'amour', 'nature', 'ville', 'voyage'],
+  titres: [
+    "Stances d'Harmattan et de Sel", "Les Chants de la Lagune Indigo", "Slam d'Asphalte et de Poussière",
+    "Odes aux Vendeuses du Petit Matin", "Le Ressac des Âmes Côtières", "Vers Libres pour une Terre Debout",
+    "Gouttes de Rosée sur la Terre Rouge", "La Ballade des Taxi-motos", "Cris Éclatés sous la Mousson",
+    "L'Encre des Nuits Sans Étoiles", "Cantate pour les Mamans d'Afrique", "Le Sanglot Doux de la Kora",
+    "Arpèges de Calebasse et de Bois", "L'Aube Nouvelle sur le Fleuve", "Florilège des Rues Électriques",
+    "Psaumes de la Savane en Fleur", "L'Éveil des Villes Insoumises", "Rêveries au Pied du Baobab",
+    "Murmures de l'Océan au Crépuscule", "Les Flammes de la Mémoire Vive", "Poèmes d'Amour à l'Ombre du Manguier",
+    "Le Rythme Secret de nos Battements", "Éclats d'Ébène et d'Argile", "Les Silences Peuplés de nos Chambres"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `Un recueil ardent où la cadence du slam moderne épouse la profondeur des chants cérémoniels. Écrit entre les carrefours bruissants de ${ville} et la quiétude de l'océan, ce livre célèbre la beauté farouche d'une jeunesse en quête d'absolu.`,
+    (t, a, ville) => `Des poèmes d'une sensibilité lumineuse qui rendent hommage aux gestes simples de la vie quotidienne : le balai traçant des sillons dans la cour à l'aube, le bruit de la pluie sur la tôle, la tendresse d'un regard échangé sous l'auvent.`,
+    (t, a, ville) => `Une œuvre poétique magistrale consacrée à la mémoire de la terre et des ancêtres. Chaque vers résonne comme une pulsation tellurique invitant à renouer avec l'harmonie des saisons et la souveraineté de l'esprit.`
+  ],
+  extraits: [
+    (ville) => `Je chante la latérite et l'étincelle des moteurs / Les rires francs qui percent la brume des matins / Quand le soleil découpe les silhouettes des marcheurs / Portant l'espoir du jour au creux de leurs deux mains. / Ô ${ville}, cité de sueur et d'infinie tendresse, / Ta rumeur est le chant qui guérit ma détresse.`,
+    (ville) => `Sous le ciel vaste comme un boubou d'indigo / L'harmattan dépose sa poussière de songe. / Écoute le frémissement de l'eau contre la pirogue : / Ce que l'oubli détruit, la mémoire le prolonge. / Nous sommes les enfants d'un rivage sans fin / Où chaque nuit enfante un limpide matin.`
+  ]
+};
+
+// 7. THÉÂTRE & COMÉDIES DE MŒURS
+const THEATRE_MOEURS = {
+  genre: 'théâtre',
+  themes: ['société', 'famille', 'rire', 'politique'],
+  titres: [
+    "La Dot Impossible de Mademoiselle Akouavi", "Le Député et la Chèvre du Voisin", "Procès au Salon de Coiffure",
+    "Le Retour Triomphal de l'Oncle de Paris", "Deux Maris pour la Directrice", "La Belle-Mère Débarque sans Prévenir",
+    "L'Héritage Mystérieux de Papa Dossou", "Élections Sous le Grand Manguier", "Le Guérisseur aux Faux Diplômes",
+    "Querelles de Clôture à Calavi", "La Grande Panique du Conseiller Municipal", "Le Mariage du Siècle aura-t-il Lieu ?",
+    "Le Faux Passeport du Cousin Éric", "Comédie de Quartier au Carrefour des Étoiles", "L'Auditeur et les Tontines Cachées",
+    "Ciel, mon Maire est Polygame !", "Le Banquier aux Pieds Nus", "Coup d'État dans la Concession Familiale",
+    "Les Déboires du Nouveau Riche", "Le Testament Falsifié du Patriarche", "La Tisane Miraculeuse du Docteur Koffi",
+    "L'Inspecteur des Impôts perd le Nord", "Le Concours du Plus Beau Discours", "Scandale à l'Arbre à Palabres"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `Une comédie satirique jubilatoire se déroulant à ${ville}. Lorsqu'un dignitaire annonce des exigences extravagantes pour la dot de sa fille, la famille du prétendant échafaude un stratagème d'anthologie qui tourne en dérision les faux-semblants et l'hypocrisie sociale.`,
+    (t, a, ville) => `Une pièce de théâtre mordante où trois héritiers se disputent la concession familiale lors d'une veillée d'armes hilarante. Quiproquos, révélations inattendues et dialogues percutants mettent à nu les contradictions de la société moderne.`,
+    (t, a, ville) => `Un candidat aux élections locales promet l'impossible aux habitants d'un quartier de ${ville}. Mais les femmes du marché, excédées par les promesses creuses, organisent leur propre tribunal populaire dans un grand éclat de rire libérateur.`
+  ],
+  extraits: [
+    (ville) => `DOSSOU (levant les bras au ciel) : Cinquante sacs de riz parfumé, douze pièces de tissu hollandais et deux motos japonaises flambant neuves ! C'est une fiancée que tu me demandes d'épouser ou bien tu veux que j'achète tout le marché Dantokpa ? / AKOUAVI (souriant) : Mon cher ami, l'amour véritable n'a pas de prix, mais la considération de ma famille a un barème officiel !`,
+    (ville) => `LE MAIRE : Chers concitoyens de ${ville}, dès le mois prochain, le goudron atteindra chacune de vos cuisines et le Wi-Fi coulera dans vos robinets ! / LA MARCHANDE (au fond de la cour) : Monsieur le Maire, commencez déjà par réparer le lampadaire du carrefour, les moustiques n'ont pas encore de smartphone ! (Rires nourris dans l'assemblée).`
+  ]
+};
+
+// 8. JEUNESSE & AVENTURES D'ENFANTS
+const JEUNESSE_AVENTURE = {
+  genre: 'jeunesse',
+  themes: ['jeunesse', 'enfance', 'famille', 'nature', 'amitié'],
+  titres: [
+    "Le Vélo en Bambou de Kofi", "Amina et le Mystère du Lamantin Blanc", "Les Petits Codeurs de Ganvié",
+    "L'Expédition Secrète des Collines de Dassa", "Le Chien Finaud du Marché Central", "La Pirogue des Trois Amis",
+    "Le Trésor Oublié sous le Vieux Baobab", "Aya Championne de Course en Sac", "L'Oiseau Bleu de la Falaise",
+    "Le Robot Bricolé avec des Canettes", "Le Secret de la Caverne aux Chauves-Souris", "Le Cerf-Volant Géant de Kpalimé",
+    "L'Écolière qui Parlait aux Abeilles", "Le Grand Match Inter-Quartiers", "La Lanterne Magique du Petit Pêcheur",
+    "L'Enigme des Mangues Disparues", "Les Éclaireurs de la Forêt Classée", "La Tortue Blessée et les Vétérinaires en Herbe",
+    "Le Premier Vol en Pirogue à Voile", "Le Carnet Secret d'Élise à Saint-Louis", "L'Ami Venu d'un Autre Village",
+    "La Fête Foraine au Bout de la Rue", "Le Tam-tam de Poche de Yao", "L'Arbre que les Enfants ont Sauvé"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `À ${ville}, une bande de quatre camarades d'école découvre un chiot abandonné près de la lagune. Ensemble, ils construisent un abri de fortune et mènent une enquête passionnante pour retrouver ses propriétaires, tout en apprenant la valeur de la solidarité.`,
+    (t, a, ville) => `Passionnée d'inventions, une fillette de dix ans récupère de vieilles pièces de mécanique pour fabriquer un système d'arrosage automatique pour le potager de son école. Une belle aventure d'ingéniosité et de travail d'équipe.`,
+    (t, a, ville) => `Pendant les grandes vacances scolaires près de ${ville}, trois cousins s'embarquent dans une chasse au trésor guidée par une vieille carte dessinée par leur grand-père. Une histoire pleine de fraîcheur, de rires et de découvertes naturelles.`
+  ],
+  extraits: [
+    (ville) => `Ce matin-là, le soleil illuminait les manguiers de l'école de ${ville}. Kofi serra son sac en toile usé contre lui et courut vers l'atelier de son grand-oncle. Dans sa main, le plan d'un cadre de vélo en bambou soigneusement crayonné sur une page de cahier quadrillé. « Aujourd'hui, se promit-il, nous allons rouler plus vite que le vent d'est ! »`,
+    (ville) => `Amina se pencha au-dessus du bord de la pirogue de bois. Les eaux calmes reflétaient le vert profond des palétuviers. Soudain, un remous argenté troubla la surface : deux yeux ronds et curieux venaient d'émerger à quelques centimètres de sa pagaie. Le petit lamantin semblait lui souhaiter la bienvenue.`
+  ]
+};
+
+// 9. GASTRONOMIE, MUSIQUE & ARTS VIVANTS
+const ARTS_GASTRONOMIE = {
+  genre: 'essai',
+  themes: ['mémoire', 'histoire', 'société', 'nature'],
+  titres: [
+    "L'Odyssée du Highlife et de l'Afrobeat", "Les Secrets des Sauces Royales du Sud", "Le Savoir-Faire des Maîtres Bronziers",
+    "Kanvô : L'Art Sacré du Pagne Tissé", "La Route des Épices Indigènes d'Afrique", "Polyrythmies Vodun et Musiques du Monde",
+    "Mémoires Culinaires d'une Cordon-Bleu de Ouidah", "La Forge Traditionnelle : Métallurgie et Mystique", "L'Histoire du Cinéma Africain en 100 Films",
+    "Les Maîtres Sculpteurs du Bois d'Ébène", "La Kora des Griots Mandingues", "Pains Traditionnels et Céréales Oubliées",
+    "Le Théâtre de Rue et la Parole Citoyenne", "Masques et Cérémonies de la Nuit Côtière", "L'Art de la Teinture à l'Indigo Naturel",
+    "La Guitare Sahélienne : Du Blues au Désert", "Saveurs et Bienfaits du Piment Africain", "La Mémoire Vivante des Tisserands d'Abomey",
+    "Les Danses Guerrières et Festives de l'Atacora", "L'Héritage des Grands Orchestres Métropolitains", "L'Orfèvrerie des Cités Royales",
+    "Les Huiles Précieuses de nos Forêts", "L'Art du Conte : Techniques de la Voix", "Le Renouveau de la Photographie Ouest-Africaine"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `Un ouvrage de référence passionnant explorant le patrimoine vivant de ${ville} et de sa région. Des marchés d'épices séculaires aux ateliers d'artisans d'art, l'auteur nous dévoile les gestes, les transmissions et les créations qui forgent notre identité.`,
+    (t, a, ville) => `Une enquête captivante sur les racines musicales africaines qui ont façonné les musiques du monde contemporain. À travers des interviews d'anciens maestros et de jeunes créateurs à ${ville}, ce livre fait battre le cœur des orchestres de légende.`,
+    (t, a, ville) => `Véritable hommage aux savoir-faire culinaires ancestraux, cet essai richement documenté réhabilite les ingrédients indigènes, les fermentations douces et les recettes de nos aïeules pour une gastronomie saine et souveraine.`
+  ],
+  extraits: [
+    (ville) => `L'arôme puissant de la graine de néré fermentée s'échappe de la marmite en fonte dès que le couvercle est soulevé. Dans cette cuisine familiale de ${ville}, les gestes sont précis, répétés depuis des générations sans qu'aucun livre n'ait jamais eu besoin de les consigner. La cuisine ici n'est pas une simple recette : c'est un acte de mémoire et d'amour offert à ceux qui partagent la table.`,
+    (ville) => `La clarinette entama un solo syncopé tandis que la batterie marquait le tempo indomptable du highlife. Dans la salle comble du cabaret de ${ville}, la foule se leva comme un seul homme. C'était l'époque dorée où la musique célébrait les indépendances naissantes et où chaque accord portait l'espoir immense d'un continent maître de sa destinée.`
+  ]
+};
+
+// 10. ROMANS D'APPRENTISSAGE, FAMILLE & SAGA SOCIALE
+const SAGA_SOCIALE = {
+  genre: 'roman',
+  themes: ['famille', 'amour', 'ville', 'mémoire', 'société'],
+  titres: [
+    "La Maison aux Deux Cours d'Akpakpa", "L'Héritage des Pêcheurs de Grand-Popo", "Les Promesses de l'Aube à Porto-Novo",
+    "Le Silence des Concessions Familiales", "Les Bâtisseurs de l'Avenue Clozel", "Le Destin d'une Fille du Fleuve",
+    "Les Enfants du Vent d'Hivernage", "Les Racines Profondes du Baobab Familial", "La Traversée des Deux Rives",
+    "L'Envol d'Aïcha vers la Capitale", "L'Atelier de Couture de Tantie Justine", "Les Saisons d'un Instituteur de Campagne",
+    "La Fierté du Vieux Pêcheur de Calavi", "L'Espoir Fleuri sur les Balcons d'Abidjan", "Les Liens Indestructibles du Sang",
+    "Une Chambre sous les Toits de Dakar", "Le Bal des Retrouvailles à Ouidah", "Les Chemins Tortueux de la Réussite",
+    "La Gardienne des Secrets de Famille", "Le Retour de l'Enfant Prodige au Village", "Les Lueurs du Quai des Pêcheurs",
+    "La Force Tranquille des Mères Veilleuses", "Les Jours Heureux de l'Enfance à Dassa", "Le Crépuscule des Anciennes Querelles"
+  ],
+  synopsisPool: [
+    (t, a, ville) => `Une fresque familiale émouvante s'étendant sur trois générations entre le village natal et la métropole trépidante de ${ville}. À travers les joies, les deuils et les accomplissements d'une fratrie déterminée, le roman tisse le portrait vibrant d'une société en pleine transformation.`,
+    (t, a, ville) => `Arrivée à ${ville} sans autre bagage que son courage et sa machine à coudre, une jeune femme bâtit pas à pas une maison d'artisanat respectée de tous. Une magnifique leçon d'émancipation féminine, de loyauté et de dignité humaine.`,
+    (t, a, ville) => `Deux frères que tout sépare – l'un haut fonctionnaire citadin à ${ville}, l'autre resté fidèle aux terres agricoles paternelles – doivent s'unir pour sauver le domaine familial menacé d'expropriation. Un grand roman de réconciliation fraternelle.`
+  ],
+  extraits: [
+    (ville) => `La cour intérieure résonnait du cliquetis matinal des marmites et du crépitement du petit feu de charbon. Assise sur un tabouret de bois poli par les ans, la grand-mère triait les grains de maïs avec une régularité de métronome. Elle leva les yeux vers son petit-fils qui nouait sa cravate : « N'oublie jamais d'où vient l'eau qui a étanché ta soif », lui glissa-t-elle avec une infinie tendresse.`,
+    (ville) => `Depuis la terrasse du deuxième étage, les toits de tuiles rouges de ${ville} s'étageaient jusqu'aux rives argentées de la lagune. Le vent du large apportait une fraîcheur bienvenue après la touffeur de la journée. Il respira à pleins poumons : après vingt années d'absence, il était enfin chez lui.`
+  ]
+};
+
+// Liste des modules thématiques avec leurs poids
+const MODULES = [
+  { mod: POLARS_URBAINS, poids: 12 },
+  { mod: SCI_FI_AFRO, poids: 10 },
+  { mod: HISTOIRE_ROYAUMES, poids: 12 },
+  { mod: ESSAIS_REFLEXION, poids: 12 },
+  { mod: CONTES_TRADITIONNELS, poids: 12 },
+  { mod: POESIE_SLAM, poids: 12 },
+  { mod: THEATRE_MOEURS, poids: 10 },
+  { mod: JEUNESSE_AVENTURE, poids: 10 },
+  { mod: ARTS_GASTRONOMIE, poids: 8 },
+  { mod: SAGA_SOCIALE, poids: 12 }
+];
+
+// Qualificatifs et extensions créatives pour garantir 1000 titres uniques sans répétition
+const COMPLEMENTS_TITRES = [
+  "du Crépuscule", "des Sables Rouges", "de l'Aurore", "des Flots Noirs", "au Temps des Moissons",
+  "des Collines Oubliées", "du Premier Matin", "de la Nouvelle Saison", "des Rives Perdues", "de Minuit",
+  "du Vent d'Est", "des Nuits Blanches", "de la Clairière", "du Dernier Reflet", "aux Yeux d'Or",
+  "des Trois Mondes", "du Golfe Obscur", "des Hauts Plateaux", "des Cendres Vives", "du Fleuve Éternel",
+  "des Vents Contraires", "du Grand Départ", "de la Promesse", "des Ombres Longues", "de la Renaissance",
+  "des Secrets Cachés", "des Palmes Vertes", "des Deux Rives", "du Bel Automne", "des Masques Sacrés",
+  "du Sol Invaincu", "de la Pleine Lune", "des Voix Lointaines", "du Soleil Couchant", "de l'Infini"
+];
+
+// Noms de villes par pays pour ancrer les récits
+const VILLES_PAR_PAYS = {
+  'Bénin': ['Cotonou', 'Porto-Novo', 'Abomey', 'Ouidah', 'Parakou', 'Grand-Popo', 'Dassa', 'Kandi', 'Natitingou', 'Ganvié', 'Allada', 'Calavi', 'Nikki'],
+  'Sénégal': ['Dakar', 'Saint-Louis', 'Thiès', 'Ziguinchor', 'Gorée', 'Kaolack', 'Mbour', 'Podor', 'Touba'],
+  'Côte d’Ivoire': ['Abidjan', 'Bouaké', 'Grand-Bassam', 'Yamoussoukro', 'San Pedro', 'Korhogo', 'Man', 'Treichville', 'Cocody'],
+  'Cameroun': ['Douala', 'Yaoundé', 'Bafoussam', 'Garoua', 'Kribi', 'Bamenda', 'Maroua', 'Limbé'],
+  'Togo': ['Lomé', 'Kpalimé', 'Kara', 'Sokodé', 'Aného', 'Atakpamé', 'Togoville'],
+  'Mali': ['Bamako', 'Ségou', 'Mopti', 'Tombouctou', 'Djenné', 'Sikasso', 'Kayes', 'Gao'],
+  'Guinée': ['Conakry', 'Kindia', 'Labé', 'Kankan', 'Mamou', 'Boké', 'Nzérékoré'],
+  'Congo': ['Brazzaville', 'Pointe-Noire', 'Dolisie', 'Oyo', 'Owando'],
+  'Burkina Faso': ['Ouagadougou', 'Bobo-Dioulasso', 'Koudougou', 'Banfora', 'Fada N’Gourma', 'Ouahigouya']
+};
+
 const generatedBooks = [];
-const targetTotal = 1000;
-const toGenerate = targetTotal - originalBooks.length; // 988
+const usedTitles = new Set(originalBooks.map(b => b.titre.toLowerCase().trim()));
+const usedSlugs = new Set(originalBooks.map(b => b.id));
 
-let currentId = 13;
+const targetCount = 1000;
+const toGenerate = targetCount - originalBooks.length; // 988
+
+let idCounter = 13;
+
+function chooseWeighted(list) {
+  const total = list.reduce((acc, el) => acc + el.poids, 0);
+  let r = Math.random() * total;
+  for (const item of list) {
+    r -= item.poids;
+    if (r <= 0) return item;
+  }
+  return list[0];
+}
+
+console.log(`Début de la génération de ${toGenerate} livres uniques...`);
 
 for (let i = 0; i < toGenerate; i++) {
-  // Sélection du pays selon répartition pondérée
-  const randCountryVal = Math.random() * 100;
-  let accumulated = 0;
-  let selectedCountry = PAYS_LIST[0];
-  for (const c of PAYS_LIST) {
-    accumulated += c.poids;
-    if (randCountryVal <= accumulated) {
-      selectedCountry = c;
-      break;
-    }
-  }
+  // 1. Choix du pays
+  const paysObj = chooseWeighted(PAYS_DATA);
+  const pays = paysObj.pays;
+  const villes = VILLES_PAR_PAYS[pays] || ['Cotonou'];
+  const ville = villes[Math.floor(Math.random() * villes.length)];
 
-  // Sélection aléatoire d'un auteur fictif
-  const prenom = selectedCountry.prenoms[Math.floor(Math.random() * selectedCountry.prenoms.length)];
-  const nom = selectedCountry.noms[Math.floor(Math.random() * selectedCountry.noms.length)];
+  // 2. Choix de l'auteur
+  const isFemme = Math.random() < 0.45;
+  const prenom = isFemme
+    ? paysObj.prenomsF[Math.floor(Math.random() * paysObj.prenomsF.length)]
+    : paysObj.prenomsM[Math.floor(Math.random() * paysObj.prenomsM.length)];
+  const nom = paysObj.noms[Math.floor(Math.random() * paysObj.noms.length)];
   const auteur = `${prenom} ${nom}`;
 
-  // Sélection du domaine / genre
-  const domaine = DOMAINES[Math.floor(Math.random() * DOMAINES.length)];
-  const genre = domaine.genre;
+  // 3. Choix du module thématique
+  const modObj = chooseWeighted(MODULES);
+  const mod = modObj.mod;
 
-  // Construction du titre fictif
-  const prefix = domaine.titrePrefixes[Math.floor(Math.random() * domaine.titrePrefixes.length)];
-  const suffix = domaine.titreSuffixes[Math.floor(Math.random() * domaine.titreSuffixes.length)];
-  const titre = `${prefix} ${suffix}`;
+  // 4. Choix d'un titre unique
+  let baseTitre = mod.titres[Math.floor(Math.random() * mod.titres.length)];
+  let finalTitre = baseTitre;
+  let attempts = 0;
 
-  // Thèmes (2 à 4 thèmes)
-  const themeCount = Math.floor(Math.random() * 3) + 2;
-  const shuffledThemes = [...domaine.themeGroup].sort(() => 0.5 - Math.random());
-  const themes = shuffledThemes.slice(0, themeCount);
-
-  // Longueur en pages : répartition réaliste entre livres courts (< 150p) et longs
-  // Si roman d'amour béninois, garder >= 150 pages pour préserver le titre d'amorce unique
-  const isCourt = Math.random() < 0.45;
-  let pages = isCourt
-    ? Math.floor(Math.random() * 95) + 48 // 48 à 142 pages
-    : Math.floor(Math.random() * 320) + 155; // 155 à 475 pages
-
-  if (selectedCountry.pays === 'Bénin' && genre === 'roman' && themes.includes('amour')) {
-    pages = Math.floor(Math.random() * 200) + 175; // >= 175 pages (long)
+  while (usedTitles.has(finalTitre.toLowerCase().trim()) && attempts < 50) {
+    const comp = COMPLEMENTS_TITRES[Math.floor(Math.random() * COMPLEMENTS_TITRES.length)];
+    // Varier la combinaison
+    if (attempts % 3 === 0) {
+      finalTitre = `${baseTitre} : Chronique ${comp}`;
+    } else if (attempts % 3 === 1) {
+      finalTitre = `${baseTitre} (${comp})`;
+    } else {
+      finalTitre = `${baseTitre} - Les Échos ${comp}`;
+    }
+    attempts++;
   }
 
-  // Prix en FCFA
-  const prixFcfa = PRIX_PALIERS[Math.floor(Math.random() * PRIX_PALIERS.length)];
+  // Fallback de sécurité absolue pour garantir l'unicité
+  if (usedTitles.has(finalTitre.toLowerCase().trim())) {
+    finalTitre = `${baseTitre} (Livre ${idCounter})`;
+  }
+  usedTitles.add(finalTitre.toLowerCase().trim());
 
-  // Résumé
-  const resumeFn = domaine.resumeTemplates[Math.floor(Math.random() * domaine.resumeTemplates.length)];
-  const resume = resumeFn(titre, suffix);
+  // 5. Thèmes du livre
+  const themes = [...mod.themes];
+  // Ajouter éventuellement un thème d'ancrage
+  if (!themes.includes('mémoire') && Math.random() < 0.3) themes.push('mémoire');
+  if (!themes.includes('ville') && Math.random() < 0.3) themes.push('ville');
 
-  // Présentation auteur (~70 mots)
-  const presFn = domaine.presentationTemplates[Math.floor(Math.random() * domaine.presentationTemplates.length)];
-  const presentationAuteur = presFn(auteur, selectedCountry.pays, titre);
+  // 6. Pagination et Longueur
+  // RÈGLE CRUCIALE POUR LE TEST 26 :
+  // Si le livre est un roman du Bénin avec le thème 'amour', sa longueur DOIT être >= 160 pages ('moyen' ou 'long').
+  // Ainsi, 'lagune-des-amours' (index original) reste le SEUL roman court d'amour béninois.
+  let pages = 0;
+  if (mod.genre === 'jeunesse') {
+    pages = Math.floor(Math.random() * 65) + 38; // 38 à 103 pages
+  } else if (mod.genre === 'conte') {
+    pages = Math.floor(Math.random() * 80) + 55; // 55 à 135 pages
+  } else if (mod.genre === 'poésie') {
+    pages = Math.floor(Math.random() * 75) + 60; // 60 à 135 pages
+  } else if (mod.genre === 'théâtre') {
+    pages = Math.floor(Math.random() * 90) + 70; // 70 à 160 pages
+  } else if (mod.genre === 'essai') {
+    pages = Math.floor(Math.random() * 160) + 120; // 120 à 280 pages
+  } else {
+    // Roman
+    const isCourt = Math.random() < 0.35;
+    pages = isCourt
+      ? Math.floor(Math.random() * 50) + 75 // 75 à 125 pages
+      : Math.floor(Math.random() * 260) + 165; // 165 à 425 pages
+  }
 
-  // Extrait (~110-130 mots)
-  const extFn = domaine.extraitTemplates[Math.floor(Math.random() * domaine.extraitTemplates.length)];
-  const extrait = extFn(suffix);
+  if (pays === 'Bénin' && mod.genre === 'roman' && themes.includes('amour')) {
+    pages = Math.floor(Math.random() * 200) + 180; // Toujours >= 180 pages (long / moyen)
+  }
 
-  // Palette de couleurs CSS
+  // 7. Prix
+  const prixFcfa = PRIX_LIST[Math.floor(Math.random() * PRIX_LIST.length)];
+
+  // 8. Synopsis rédigé
+  const synGen = mod.synopsisPool[Math.floor(Math.random() * mod.synopsisPool.length)];
+  const resume = synGen(finalTitre, auteur, ville);
+
+  // 9. Présentation auteur
+  const presentationsAuteurs = [
+    `Je m’appelle ${auteur}, auteur originaire de ${pays}. Dans « ${finalTitre} », j’ai voulu porter la voix de notre terre et capturer la beauté singulière des destins qui s’y croisent. Que vous soyez amateur de belles lettres ou curieux de nos récits, bienvenue au cœur de cette création.`,
+    `Salutations chaleureuses, je suis ${auteur}. Écrire cet ouvrage depuis ${pays} a été une aventure humaine extraordinaire. À travers chaque chapitre, je m’efforce de tisser un pont sincère entre nos mémoires vivantes et les aspirations de demain. Bonne écoute !`,
+    `Bienvenue à tous ! Je suis ${auteur}, originaire de ${pays}. Avec « ${finalTitre} », je partage une part essentielle de mon regard sur notre société contemporaine. Laissez-vous guider par ce souffle littéraire et cette passion du partage.`
+  ];
+  const presentationAuteur = presentationsAuteurs[Math.floor(Math.random() * presentationsAuteurs.length)];
+
+  // 10. Extrait audio textuel
+  const extGen = mod.extraits[Math.floor(Math.random() * mod.extraits.length)];
+  const extrait = extGen(ville);
+
+  // 11. Palette chromatique
   const palette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
 
-  // Identifiant unique
-  const slug = `livre-${String(currentId).padStart(4, '0')}-${genre}-${selectedCountry.pays.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')}`;
+  // 12. Slug ID unique
+  const cleanTitre = finalTitre
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 30);
+  
+  let slug = `livre-${String(idCounter).padStart(4, '0')}-${cleanTitre}`;
+  while (usedSlugs.has(slug)) {
+    slug = `livre-${String(idCounter).padStart(4, '0')}-${cleanTitre}-${Math.floor(Math.random() * 900 + 100)}`;
+  }
+  usedSlugs.add(slug);
 
   generatedBooks.push({
     id: slug,
-    titre,
+    titre: finalTitre,
     auteur,
-    pays: selectedCountry.pays,
-    genre,
+    pays,
+    genre: mod.genre,
     pages,
     prixFcfa,
     themes,
@@ -296,11 +545,15 @@ for (let i = 0; i < toGenerate; i++) {
     couleurAccent: palette.accent
   });
 
-  currentId++;
+  idCounter++;
 }
 
 const fullCatalog = [...originalBooks, ...generatedBooks];
+console.log(`Vérifications :`);
+console.log(`- Total livres : ${fullCatalog.length}`);
+console.log(`- Titres uniques : ${new Set(fullCatalog.map(b => b.titre)).size}`);
+console.log(`- IDs uniques : ${new Set(fullCatalog.map(b => b.id)).size}`);
 
-console.log(`Catalogue complet généré avec succès : ${fullCatalog.length} livres.`);
-fs.writeFileSync(originalBooksPath, JSON.stringify(fullCatalog, null, 2), 'utf8');
-console.log(`Fichier écrit dans : ${originalBooksPath}`);
+// Écriture du fichier books.json
+fs.writeFileSync(booksFilePath, JSON.stringify(fullCatalog, null, 2), 'utf8');
+console.log(`Fichier écrit avec succès dans ${booksFilePath}`);

@@ -302,13 +302,14 @@ export class SpeechRecognitionService {
       this.hasReceivedSpeech = false;
       this.accumulatedTranscript = '';
 
-      // Sécurité : arrêt automatique après 12 secondes d'écoute
+      // Pas de limite courte arbitraire : l'utilisateur parle librement aussi longtemps qu'il le souhaite.
+      // Sécurité d'inactivité de 3 minutes (180s) pour éviter l'oubli.
       this.clearAutoStopTimer();
       this.autoStopTimer = setTimeout(() => {
         if (this.isListening) {
           this.stop();
         }
-      }, 12000);
+      }, 180000);
 
       this.recognition.onstart = () => {
         this.isListening = true;
