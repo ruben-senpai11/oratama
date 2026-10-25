@@ -69,10 +69,14 @@ export function getGeminiApiKey(): string | null {
     return localKey.trim();
   }
 
-  // Repli sur l'environnement Vite
-  const envKey = (import.meta as unknown as { env?: { VITE_GEMINI_API_KEY?: string } })?.env?.VITE_GEMINI_API_KEY;
-  if (envKey && typeof envKey === 'string' && envKey.trim().length > 10) {
-    return envKey.trim();
+  // Repli sur l'environnement Vite (.env.local)
+  try {
+    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (envKey && typeof envKey === 'string' && envKey.trim().length > 10) {
+      return envKey.trim();
+    }
+  } catch {
+    // Ignore
   }
 
   return null;
@@ -163,7 +167,7 @@ export async function testGeminiApiKey(apiKey: string): Promise<{ success: boole
       return { success: false, message: 'La clé API ne peut pas être vide.' };
     }
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${cleanKey}`;
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -200,12 +204,12 @@ export async function testGeminiApiKey(apiKey: string): Promise<{ success: boole
 }
 
 /**
- * Envoie l'enregistrement audio à Gemini 2.0 Flash pour transcription et extraction sémantique
+ * Envoie l'enregistrement audio à Gemini pour transcription et extraction sémantique
  */
 export async function processAudioWithGemini(
   audioBlob: Blob,
   apiKey: string,
-  model = 'gemini-2.0-flash'
+  model = 'gemini-flash-latest'
 ): Promise<GeminiSearchExtraction> {
   const base64Audio = await blobToBase64(audioBlob);
   const mimeType = audioBlob.type || 'audio/webm';

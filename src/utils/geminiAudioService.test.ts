@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getGeminiApiKey,
   setGeminiApiKey,
@@ -11,6 +11,11 @@ import {
 describe('geminiAudioService - Gestion de la clé API', () => {
   beforeEach(() => {
     clearGeminiApiKey();
+    vi.stubEnv('VITE_GEMINI_API_KEY', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('détecte correctement l’absence de clé par défaut', () => {
@@ -18,7 +23,7 @@ describe('geminiAudioService - Gestion de la clé API', () => {
     expect(getGeminiApiKey()).toBeNull();
   });
 
-  it('enregistre et récupère une clé API valide', () => {
+  it('enregistre et récupère une clé API valide saisie par l’utilisateur', () => {
     const fakeKey = 'AIzaSyFakeKeyForTest123456789';
     setGeminiApiKey(fakeKey);
 
@@ -36,6 +41,14 @@ describe('geminiAudioService - Gestion de la clé API', () => {
     expect(getGeminiApiKey()).toBeNull();
   });
 
+  it('détecte la clé définie dans import.meta.env si localStorage est vide', () => {
+    vi.stubEnv('VITE_GEMINI_API_KEY', 'AIzaSyFromEnvFile123456789');
+    clearGeminiApiKey();
+
+    expect(isGeminiConfigured()).toBe(true);
+    expect(getGeminiApiKey()).toBe('AIzaSyFromEnvFile123456789');
+  });
+
   it('renvoie un type MIME audio par défaut', () => {
     const mime = getOptimalAudioMimeType();
     expect(typeof mime).toBe('string');
@@ -44,7 +57,7 @@ describe('geminiAudioService - Gestion de la clé API', () => {
 });
 
 describe('geminiAudioService - Traitement multimodal et extraction', () => {
-  it('parse correctement la réponse JSON structurée de Gemini 2.0 Flash', async () => {
+  it('parse correctement la réponse JSON structurée de Gemini Flash', async () => {
     const mockResponsePayload = {
       candidates: [
         {
