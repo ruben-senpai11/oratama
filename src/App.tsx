@@ -110,6 +110,31 @@ export const App: React.FC = () => {
     navigateTo({ name: 'results', query, parsed });
   };
 
+  const handleCloseDebug = () => {
+    setIsDebugMode(false);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('debug');
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  const handleToggleDebug = () => {
+    setIsDebugMode((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        if (next) {
+          url.searchParams.set('debug', '1');
+        } else {
+          url.searchParams.delete('debug');
+        }
+        window.history.replaceState({}, '', url.toString());
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1B1B2A] font-sans antialiased">
       {/* Bandeau permanent obligatoire sur TOUS les écrans */}
@@ -174,7 +199,7 @@ export const App: React.FC = () => {
 
       {/* Mode diagnostic vocal activable par ?debug=1 */}
       {isDebugMode && (
-        <DiagnosticPanel onClose={() => setIsDebugMode(false)} />
+        <DiagnosticPanel onClose={handleCloseDebug} />
       )}
 
       {/* Pied de page discret */}
@@ -183,7 +208,7 @@ export const App: React.FC = () => {
           <span>OraTama · Prototype d’expérimentation d'une Bibliothèque Africaine Orale</span>
           <button
             type="button"
-            onClick={() => setIsDebugMode((prev) => !prev)}
+            onClick={handleToggleDebug}
             className="underline text-[#1F2A5C] hover:text-[#161E42] font-semibold transition-colors"
             title="Activer ou désactiver le mode diagnostic vocal (?debug=1)"
           >
