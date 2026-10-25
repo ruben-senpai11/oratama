@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewScreen } from '../types';
-import { isSpeechRecognitionSupported, SpeechRecognitionService } from '../utils/speechRecognition';
+import { isSpeechRecognitionSupported, SpeechRecognitionService, requestMicrophonePermission } from '../utils/speechRecognition';
 import { ConsentModal } from '../components/ConsentModal';
 
 interface HomeScreenProps {
@@ -289,13 +289,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
         {errorMessage && (
           <div
             role="alert"
-            className="w-full p-3.5 rounded-xl bg-[#FDF0ED] border border-[#B3261E]/40 text-[#B3261E] text-xs leading-relaxed"
+            className="w-full p-3.5 rounded-xl bg-[#FDF0ED] border border-[#B3261E]/40 text-[#B3261E] text-xs leading-relaxed space-y-2"
           >
-            <p className="font-bold flex items-center gap-1.5 mb-1">
+            <p className="font-bold flex items-center gap-1.5 mb-0.5">
               <span>⚠️</span>
               <span>Information vocale :</span>
             </p>
             <p className="text-[#1B1B2A]">{errorMessage}</p>
+
+            <div className="pt-2 border-t border-[#B3261E]/20 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  setStatusMessage('Demande de permission au navigateur en cours…');
+                  const res = await requestMicrophonePermission();
+                  if (res.granted) {
+                    setErrorMessage(null);
+                    setStatusMessage('Permission accordée ! Lancement du micro…');
+                    void startRecognition();
+                  } else {
+                    setStatusMessage(null);
+                    setErrorMessage(res.error || 'Permission refusée par le navigateur.');
+                  }
+                }}
+                className="min-h-[38px] px-3.5 py-1.5 bg-[#1F2A5C] text-white text-[11px] font-bold rounded-lg hover:bg-[#161E42] transition-colors shadow-sm"
+              >
+                Demander l’autorisation micro
+              </button>
+              <span className="text-[10px] text-[#6B6B7A]">
+                (Ou tapez directement ci-dessous)
+              </span>
+            </div>
           </div>
         )}
       </div>

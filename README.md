@@ -1,8 +1,8 @@
 # OraTama
 
 > **Avertissement officiel** : **Concept non officiel inspiré de Tama, ni affilié ni approuvé par Tama.**  
-> Aucune donnée, aucun logo, aucune couverture ni aucun texte réel d’une plateforme existante n’ont été utilisés. L’ensemble des 12 livres, auteurs et textes sont entièrement fictifs.  
-> **Pour retirer ce concept, écrivez-moi :** `alban.honfovou@example.com`.
+> Aucune donnée, aucun logo, aucune couverture ni aucun texte réel d’une plateforme existante n’ont été utilisés. L’ensemble des 1 000 livres, auteurs et textes sont entièrement fictifs.  
+> **Pour retirer ce concept, écrivez-moi :** `albanhonfovou@gmail.com`.
 
 ---
 
@@ -150,13 +150,17 @@ Audit réalisé avec le moteur officiel Lighthouse 13.5 en émulation mobile str
    Les synthétiseurs vocaux par défaut des navigateurs grand public ne possèdent pas à ce jour de voix Fon, Yoruba ou Goun. Plutôt que de masquer cette réalité ou de simuler une voix erronée, l'interface affiche explicitement ces langues comme grisées avec la mention *« bientôt »* et une note pédagogique.
 5. **Stockage audio 100 % local** :  
    Les enregistrements de l'Espace Auteur sont sauvegardés dans la base IndexedDB de l'appareil (`oratama_db`). Rien n'est envoyé sur Internet, assurant une confidentialité totale et un fonctionnement même en mode avion.
+6. **Mode Diagnostic temps réel (`?debug=1`)** :  
+   Accessible en ajoutant `?debug=1` dans l'URL ou en cliquant sur le lien « Diagnostic » en pied de page. Il inspecte en direct le navigateur (détection spécifique de Brave et des boucliers stricts), l'existence de `SpeechRecognition`, la langue active (`fr-FR`), le statut des permissions micro, et le journal complet des codes d'erreurs normalisés (`no-speech`, `not-allowed`, `audio-capture`, `network`, `service-not-allowed`, `language-not-supported`). Zéro enregistrement et zéro télémétrie externe.
+7. **Gestion des navigateurs stricts (Brave, Tor, Chromium durci)** :  
+   Lorsque le navigateur bloque le Web Speech API par défaut, OraTama déclenche une demande de permission matérielle explicite (`getUserMedia`) et affiche un guide spécifique expliquant comment autoriser les services vocaux dans les paramètres du navigateur, tout en maintenant l'alternative textuelle instantanée.
 
 ---
 
 ## ⚠️ Limites connues
 
 1. **Dépendance au moteur SpeechRecognition** : La précision de la dictée vocale dépend du service de reconnaissance fourni par le système d'exploitation du smartphone (reconnaissance Google sur Android).
-2. **Catalogage expérimental** : Le catalogue contient 12 œuvres représentatives de genres et pays variés (Bénin, Togo, Mali, Côte d'Ivoire, Sénégal, Cameroun, Gabon) créées exclusivement pour la démonstration.
+2. **Catalogage expérimental exhaustif** : Le catalogue contient 1 000 œuvres fictives couvrant l'ensemble des domaines (roman, poésie, conte, essai, nouvelle, jeunesse) et de multiples pays africains (Bénin, Togo, Mali, Côte d'Ivoire, Sénégal, Cameroun, Gabon, Guinée, Congo, Burkina Faso).
 3. **Persistance multi-appareils** : Les voix enregistrées par les auteurs dans l'Espace Auteur sont rattachées au navigateur local et ne sont pas synchronisées dans le cloud.
 
 ---
@@ -165,4 +169,5 @@ Audit réalisé avec le moteur officiel Lighthouse 13.5 en émulation mobile str
 
 Ce prototype est le fruit d'un travail indépendant d'exploration d'Alban Honfovou.  
 Si vous représentez les titulaires de droits de Tama et souhaitez le retrait de ce concept d'étude :  
-✉️ **Écrivez à :** `alban.honfovou@example.com`
+✉️ **Écrivez à :** `albanhonfovou@gmail.com`
+Portfolio : [alban-honfovou.vercel.app](https://alban-honfovou.vercel.app)

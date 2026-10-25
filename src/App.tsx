@@ -3,6 +3,7 @@ import { ViewScreen } from './types';
 import { Header } from './components/Header';
 import { PermanentBanner } from './components/PermanentBanner';
 import { InstallPrompt } from './components/InstallPrompt';
+import { DiagnosticPanel } from './components/DiagnosticPanel';
 import { parseQuery } from './utils/queryParser';
 
 // Chargement paresseux des écrans (lazy loading) pour optimiser le bundle JS
@@ -70,14 +71,28 @@ export const App: React.FC = () => {
     return { name: 'home' };
   });
 
-  // Synchronisation avec les changements de hash du navigateur (bouton retour/suivant)
+  const [isDebugMode, setIsDebugMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.search.includes('debug=1') || window.location.hash.includes('debug=1');
+    }
+    return false;
+  });
+
+  // Synchronisation avec les changements d'URL du navigateur (bouton retour/suivant et ?debug=1)
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleUrlChange = () => {
       setCurrentScreen(parseHash(window.location.hash));
+      if (window.location.search.includes('debug=1') || window.location.hash.includes('debug=1')) {
+        setIsDebugMode(true);
+      }
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
+    };
   }, []);
 
   const navigateTo = (screen: ViewScreen) => {
@@ -157,10 +172,23 @@ export const App: React.FC = () => {
       {/* Notification pop-up d'installation locale */}
       <InstallPrompt />
 
+      {/* Mode diagnostic vocal activable par ?debug=1 */}
+      {isDebugMode && (
+        <DiagnosticPanel onClose={() => setIsDebugMode(false)} />
+      )}
+
       {/* Pied de page discret */}
       <footer className="w-full bg-[#FBF8F3] border-t border-[#E8E3DA] py-3 text-center text-[10px] text-[#6B6B7A] font-medium">
-        <div className="max-w-md mx-auto px-4">
-          OraTama · Prototype d’expérimentation · Mobile-first design
+        <div className="max-w-md mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-1">
+          <span>OraTama · Prototype d’expérimentation d'une Bibliothèque Africaine Orale</span>
+          <button
+            type="button"
+            onClick={() => setIsDebugMode((prev) => !prev)}
+            className="underline text-[#1F2A5C] hover:text-[#161E42] font-semibold transition-colors"
+            title="Activer ou désactiver le mode diagnostic vocal (?debug=1)"
+          >
+            {isDebugMode ? '🛠️ Mode diagnostic actif' : 'Diagnostic (?debug=1)'}
+          </button>
         </div>
       </footer>
     </div>
