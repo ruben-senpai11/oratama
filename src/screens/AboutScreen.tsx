@@ -52,7 +52,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onNavigate }) => {
           <li className="flex items-start gap-2">
             <span className="text-[#1F2A5C] font-bold">1.</span>
             <span>
-              <strong className="text-[#1B1B2A]">Recherche vocale sans IA externe :</strong> analyseur pur en français détectant genres, longueurs, nationalités, thèmes et prix en FCFA sans aucun appel serveur.
+              <strong className="text-[#1B1B2A]">Recherche vocale intelligente & sécurisée :</strong> transcription haute fidélité des toponymes et accents africains avec extraction sémantique des critères (genre, pays, longueur, prix) exécutée côté serveur sans exposer aucun secret ni clé au lecteur.
             </span>
           </li>
           <li className="flex items-start gap-2">
@@ -70,7 +70,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onNavigate }) => {
           <li className="flex items-start gap-2">
             <span className="text-[#1F2A5C] font-bold">4.</span>
             <span>
-              <strong className="text-[#1B1B2A]">Sobriété et résilience locale :</strong> application web installable fonctionnant hors connexion, sans clé d’API, sans tracking, avec zéro image bitmap pour économiser la data.
+              <strong className="text-[#1B1B2A]">Sobriété et résilience locale :</strong> application web installable fonctionnant même hors connexion avec repli automatique sur le moteur local du navigateur si le réseau fait défaut, sans tracking et sans publicité.
             </span>
           </li>
         </ul>
@@ -86,7 +86,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onNavigate }) => {
             • <strong className="text-[#1B1B2A]">Langues africaines (Fon, Yoruba, Goun) :</strong> les moteurs de synthèse vocale intégrés aux navigateurs web actuels ne prennent pas encore en charge ces langues. Nous l’indiquons honnêtement dans le sélecteur sans rien prétendre d’inexistant.
           </p>
           <p>
-            • <strong className="text-[#1B1B2A]">Reconnaissance vocale :</strong> dépendante de l’implémentation du navigateur (Google Chrome et navigateurs Chromium offrent la meilleure reconnaissance en français sur Android).
+            • <strong className="text-[#1B1B2A]">Reconnaissance vocale :</strong> opérée via le proxy serveur Gemini Flash avec écoute continue sans limite de durée, ou par repli direct sur le Web Speech API du navigateur.
           </p>
         </div>
       </section>

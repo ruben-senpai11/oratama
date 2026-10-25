@@ -71,6 +71,14 @@ export const App: React.FC = () => {
     return { name: 'home' };
   });
 
+  const [lastResultsScreen, setLastResultsScreen] = useState<Extract<ViewScreen, { name: 'results' }> | null>(() => {
+    if (typeof window !== 'undefined') {
+      const initial = parseHash(window.location.hash);
+      if (initial.name === 'results') return initial;
+    }
+    return null;
+  });
+
   const [isDebugMode, setIsDebugMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return window.location.search.includes('debug=1') || window.location.hash.includes('debug=1');
@@ -81,7 +89,11 @@ export const App: React.FC = () => {
   // Synchronisation avec les changements d'URL du navigateur (bouton retour/suivant et ?debug=1)
   useEffect(() => {
     const handleUrlChange = () => {
-      setCurrentScreen(parseHash(window.location.hash));
+      const parsed = parseHash(window.location.hash);
+      setCurrentScreen(parsed);
+      if (parsed.name === 'results') {
+        setLastResultsScreen(parsed);
+      }
       if (window.location.search.includes('debug=1') || window.location.hash.includes('debug=1')) {
         setIsDebugMode(true);
       }
@@ -96,6 +108,9 @@ export const App: React.FC = () => {
   }, []);
 
   const navigateTo = (screen: ViewScreen) => {
+    if (screen.name === 'results') {
+      setLastResultsScreen(screen);
+    }
     setCurrentScreen(screen);
     const newHash = screenToHash(screen);
     if (window.location.hash !== newHash) {
@@ -105,9 +120,29 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSearch = (query: string) => {
-    const parsed = parseQuery(query);
-    navigateTo({ name: 'results', query, parsed });
+  const handleBack = () => {
+    if (currentScreen.name === 'reader' && 'bookId' in currentScreen) {
+      navigateTo({ name: 'book', bookId: currentScreen.bookId });
+    } else if (currentScreen.name === 'book') {
+      if (lastResultsScreen) {
+        navigateTo(lastResultsScreen);
+      } else {
+        navigateTo({ name: 'home' });
+      }
+    } else {
+      navigateTo({ name: 'home' });
+    }
+  };
+
+  const handleSearch = (query: string, parsedOverride?: any) => {
+    const parsed = parsedOverride || parseQuery(query);
+    const resultsScreen: Extract<ViewScreen, { name: 'results' }> = {
+      name: 'results',
+      query,
+      parsed,
+    };
+    setLastResultsScreen(resultsScreen);
+    navigateTo(resultsScreen);
   };
 
   const handleCloseDebug = () => {
@@ -119,29 +154,13 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleToggleDebug = () => {
-    setIsDebugMode((prev) => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        if (next) {
-          url.searchParams.set('debug', '1');
-        } else {
-          url.searchParams.delete('debug');
-        }
-        window.history.replaceState({}, '', url.toString());
-      }
-      return next;
-    });
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1B1B2A] font-sans antialiased">
       {/* Bandeau permanent obligatoire sur TOUS les écrans */}
       <PermanentBanner />
 
       {/* En-tête et navigation légère */}
-      <Header currentScreen={currentScreen} onNavigate={navigateTo} />
+      <Header currentScreen={currentScreen} onNavigate={navigateTo} onBack={handleBack} />
 
       {/* Contenu principal de l'écran avec Suspense */}
       <main className="flex-1 flex flex-col w-full" id="main-content">
@@ -204,16 +223,8 @@ export const App: React.FC = () => {
 
       {/* Pied de page discret */}
       <footer className="w-full bg-[#FBF8F3] border-t border-[#E8E3DA] py-3 text-center text-[10px] text-[#6B6B7A] font-medium">
-        <div className="max-w-md mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-1">
-          <span>OraTama · Prototype d’expérimentation d'une Bibliothèque Africaine Orale</span>
-          <button
-            type="button"
-            onClick={handleToggleDebug}
-            className="underline text-[#1F2A5C] hover:text-[#161E42] font-semibold transition-colors"
-            title="Activer ou désactiver le mode diagnostic vocal (?debug=1)"
-          >
-            {isDebugMode ? '🛠️ Mode diagnostic actif' : 'Diagnostic (?debug=1)'}
-          </button>
+        <div className="max-w-md mx-auto px-4">
+          <p>OraTama · Prototype d’expérimentation d'une Bibliothèque Africaine Orale</p>
         </div>
       </footer>
     </div>

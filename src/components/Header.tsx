@@ -4,12 +4,17 @@ import { ViewScreen } from '../types';
 interface HeaderProps {
   currentScreen: ViewScreen;
   onNavigate: (screen: ViewScreen) => void;
+  onBack?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate }) => {
+export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate, onBack }) => {
   const showBack = currentScreen.name !== 'home';
 
   const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
     if (currentScreen.name === 'reader' && 'bookId' in currentScreen) {
       onNavigate({ name: 'book', bookId: currentScreen.bookId });
     } else if (currentScreen.name === 'book') {

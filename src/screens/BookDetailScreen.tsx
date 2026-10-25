@@ -313,8 +313,8 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
         </p>
       </section>
 
-      {/* Bouton principal "Lire à voix haute" */}
-      <div className="pt-2">
+      {/* Actions de lecture et de commande */}
+      <div className="pt-2 space-y-2.5">
         <button
           type="button"
           onClick={() => {
@@ -326,6 +326,19 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
           <span aria-hidden="true">📖</span>
           <span>Lire cet extrait à voix haute</span>
         </button>
+
+        <a
+          href={`https://wa.me/2290196404757?text=${encodeURIComponent(
+            `Bonjour, je souhaite commander l'ouvrage « ${book.titre} » de ${book.auteur} (${book.prixFcfa.toLocaleString('fr-FR')} FCFA) découvert sur OraTama.`
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full min-h-[48px] px-6 py-3 bg-white hover:bg-[#E8ECFA]/50 text-[#1F2A5C] font-bold text-xs sm:text-sm rounded-2xl border-2 border-[#1F2A5C] shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+          aria-label={`Commander l'ouvrage ${book.titre} sur WhatsApp pour ${book.prixFcfa} FCFA (ouvre un nouvel onglet)`}
+        >
+          <span aria-hidden="true">💬</span>
+          <span>Commander cet ouvrage ({book.prixFcfa.toLocaleString('fr-FR')} FCFA)</span>
+        </a>
       </div>
     </div>
   );

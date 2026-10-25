@@ -1,11 +1,15 @@
 /**
- * Service d'intégration vocale et multimodale Gemini 2.0 Flash / Pro (Google AI)
- * pour OraTama : Bibliothèque Africaine Orale.
+ * Service d'intégration vocale et multimodale pour OraTama : Bibliothèque Africaine Orale.
  * 
- * Permet l'enregistrement audio fluide via MediaRecorder sans limite artificielle
- * de durée (l'utilisateur parle librement, décrit sa recherche, puis termine),
- * la transcription fidèle des accents et toponymes africains, et l'extraction
+ * Enregistrement audio continu fluide via MediaRecorder sans limite artificielle
+ * de durée (l'utilisateur parle à son rythme, décrit sa recherche, puis termine),
+ * transmission sécurisée au backend OraTama (`POST /api/voice-search`),
+ * transcription fidèle des accents et toponymes africains, et extraction
  * sémantique structurée des critères de recherche de livres.
+ * 
+ * 🔒 SÉCURITÉ : La clé API Google Gemini est conservée exclusivement côté serveur
+ * dans l'environnement d'exécution (Vite dev server ou fonction serverless).
+ * Aucune clé ni secret n'est jamais exposé dans le navigateur du lecteur.
  */
 
 export interface GeminiSearchExtraction {
@@ -18,89 +22,18 @@ export interface GeminiSearchExtraction {
   maxPrixFcfa: number | null;
 }
 
-const STORAGE_KEY = 'oratama_gemini_api_key';
-
-// Mémoire vive de secours pour les environnements de test / SSR
-const memoryStorage: Record<string, string> = {};
-
-function getStorageItem(key: string): string | null {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem(key);
-    }
-  } catch {
-    // Ignore
-  }
-  return memoryStorage[key] || null;
-}
-
-function setStorageItem(key: string, value: string): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(key, value);
-      return;
-    }
-  } catch {
-    // Ignore
-  }
-  memoryStorage[key] = value;
-}
-
-function removeStorageItem(key: string): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(key);
-      return;
-    }
-  } catch {
-    // Ignore
-  }
-  delete memoryStorage[key];
-}
-
 /**
- * Récupère la clé API Gemini configurée :
- * 1. Priorité à la clé saisie par l'utilisateur dans localStorage
- * 2. Repli sur la variable d'environnement Vite VITE_GEMINI_API_KEY si disponible
+ * Vérifie si le backend de reconnaissance vocale intelligente est disponible
  */
-export function getGeminiApiKey(): string | null {
-  const localKey = getStorageItem(STORAGE_KEY);
-  if (localKey && localKey.trim().length > 10) {
-    return localKey.trim();
-  }
-
-  // Repli sur l'environnement Vite (.env.local)
+export async function checkVoiceBackendStatus(): Promise<{ available: boolean; model?: string }> {
   try {
-    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (envKey && typeof envKey === 'string' && envKey.trim().length > 10) {
-      return envKey.trim();
-    }
+    const res = await fetch('/api/voice-status');
+    if (!res.ok) return { available: false };
+    const data = await res.json();
+    return { available: Boolean(data.available), model: data.model };
   } catch {
-    // Ignore
+    return { available: false };
   }
-
-  return null;
-}
-
-/**
- * Enregistre la clé API Gemini dans localStorage
- */
-export function setGeminiApiKey(apiKey: string): void {
-  setStorageItem(STORAGE_KEY, apiKey.trim());
-}
-
-/**
- * Supprime la clé API Gemini de localStorage
- */
-export function clearGeminiApiKey(): void {
-  removeStorageItem(STORAGE_KEY);
-}
-
-/**
- * Indique si une clé Gemini est configurée
- */
-export function isGeminiConfigured(): boolean {
-  return Boolean(getGeminiApiKey());
 }
 
 /**
@@ -115,7 +48,7 @@ export function getOptimalAudioMimeType(): string {
     'audio/ogg;codecs=opus',
     'audio/mp4',
     'audio/aac',
-    'audio/wav'
+    'audio/wav',
   ];
 
   for (const type of types) {
@@ -158,153 +91,50 @@ export async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
- * Teste la validité d'une clé API Gemini 2.0 Flash
+ * Envoie l'enregistrement audio au backend sécurisé (/api/voice-search)
+ * pour transcription et extraction sémantique des critères de recherche
  */
-export async function testGeminiApiKey(apiKey: string): Promise<{ success: boolean; message: string }> {
-  try {
-    const cleanKey = apiKey.trim();
-    if (!cleanKey) {
-      return { success: false, message: 'La clé API ne peut pas être vide.' };
-    }
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${cleanKey}`;
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: 'Réponds uniquement avec le mot : "OK"' }]
-          }
-        ],
-        generationConfig: {
-          maxOutputTokens: 10
-        }
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      const errMsg = errorData?.error?.message || `Erreur HTTP ${response.status}`;
-      return {
-        success: false,
-        message: `Échec de connexion : ${errMsg}. Vérifiez votre clé sur https://aistudio.google.com/app/apikey`
-      };
-    }
-
-    return { success: true, message: 'Clé API Gemini validée avec succès !' };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Erreur réseau lors du test de la clé : ${error instanceof Error ? error.message : String(error)}`
-    };
-  }
-}
-
-/**
- * Envoie l'enregistrement audio à Gemini pour transcription et extraction sémantique
- */
-export async function processAudioWithGemini(
-  audioBlob: Blob,
-  apiKey: string,
-  model = 'gemini-flash-latest'
+export async function processAudioWithBackend(
+  audioBlob: Blob
 ): Promise<GeminiSearchExtraction> {
   const base64Audio = await blobToBase64(audioBlob);
   const mimeType = audioBlob.type || 'audio/webm';
 
-  const prompt = `Tu es l'assistant vocal intelligent d'OraTama, la bibliothèque africaine orale.
-Écoute attentivement cet enregistrement audio en français (qui peut comporter des accents ouest-africains, des noms de villes ou pays d'Afrique comme Cotonou, Porto-Novo, Ganvié, Abidjan, Dakar, Lomé, Bamako, etc., des titres de livres, des genres littéraires ou des termes en langues locales comme le fon, yoruba, wolof).
-
-Mission :
-1. Transcris fidèlement la totalité des propos de l'utilisateur.
-2. Analyse sa demande pour en extraire les critères de recherche littéraire dans la bibliothèque OraTama.
-
-Réponds STRICTEMENT avec un objet JSON valide respectant cette structure :
-{
-  "transcript": "Transcription exacte et fidèle de ce que dit l'utilisateur",
-  "searchTerms": "mots-clés principaux pour rechercher dans les titres, résumés et auteurs",
-  "genre": "roman" ou "conte" ou "poésie" ou "essai" ou "théâtre" ou "jeunesse" ou null,
-  "longueur": "court" ou "moyen" ou "long" ou null,
-  "pays": "Bénin" ou "Sénégal" ou "Côte d’Ivoire" ou "Cameroun" ou "Togo" ou "Mali" ou "Guinée" ou "Congo" ou "Burkina Faso" ou "Gabon" ou null,
-  "themes": ["amour", "nature", "mémoire", "ville", "famille", "histoire", "société", "philosophie", ...],
-  "maxPrixFcfa": nombre ou null
-}
-
-IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte avant ou après.`;
-
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-  const response = await fetch(endpoint, {
+  const response = await fetch('/api/voice-search', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              inlineData: {
-                mimeType: mimeType.split(';')[0], // ex: "audio/webm"
-                data: base64Audio
-              }
-            },
-            {
-              text: prompt
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: 'application/json'
-      }
-    })
+      audioBase64: base64Audio,
+      mimeType,
+    }),
   });
 
   if (!response.ok) {
     const errorJson = await response.json().catch(() => null);
-    const errorMsg = errorJson?.error?.message || `Erreur serveur Gemini (${response.status})`;
-    throw new Error(`Erreur Gemini : ${errorMsg}`);
+    const errorMsg = errorJson?.error || `Erreur serveur (${response.status})`;
+    throw new Error(errorMsg);
   }
 
-  const data = await response.json();
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!rawText) {
-    throw new Error('Gemini n’a renvoyé aucune transcription pour cet audio.');
+  const result = await response.json();
+  if (!result.success || !result.data) {
+    throw new Error(result.error || 'Aucune transcription reçue du serveur.');
   }
 
-  try {
-    // Nettoyer d'éventuels délimiteurs markdown
-    const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(cleaned);
-
-    return {
-      transcript: parsed.transcript || '',
-      searchTerms: parsed.searchTerms || parsed.transcript || '',
-      genre: parsed.genre || null,
-      longueur: parsed.longueur || null,
-      pays: parsed.pays || null,
-      themes: Array.isArray(parsed.themes) ? parsed.themes : [],
-      maxPrixFcfa: typeof parsed.maxPrixFcfa === 'number' ? parsed.maxPrixFcfa : null,
-    };
-  } catch {
-    // Si le parsing JSON échoue, utiliser le texte brut comme transcription
-    return {
-      transcript: rawText.trim(),
-      searchTerms: rawText.trim(),
-      genre: null,
-      longueur: null,
-      pays: null,
-      themes: [],
-      maxPrixFcfa: null,
-    };
-  }
+  return {
+    transcript: result.data.transcript || '',
+    searchTerms: result.data.searchTerms || result.data.transcript || '',
+    genre: result.data.genre || null,
+    longueur: result.data.longueur || null,
+    pays: result.data.pays || null,
+    themes: Array.isArray(result.data.themes) ? result.data.themes : [],
+    maxPrixFcfa: typeof result.data.maxPrixFcfa === 'number' ? result.data.maxPrixFcfa : null,
+  };
 }
+
+// Alias pour compatibilité
+export const processAudioWithGemini = processAudioWithBackend;
 
 /**
  * Enregistreur audio continu sans limite artificielle de temps
@@ -326,7 +156,7 @@ export class FreeAudioRecorder {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-        }
+        },
       });
 
       const mimeType = getOptimalAudioMimeType();

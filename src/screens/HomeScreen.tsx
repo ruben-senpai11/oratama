@@ -1,50 +1,51 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ViewScreen } from '../types';
+import { Book, ParsedQuery, ViewScreen } from '../types';
+import booksData from '../data/books.json';
+import { BookCover } from '../components/BookCover';
 import {
   isSpeechRecognitionSupported,
   SpeechRecognitionService,
-  requestMicrophonePermission
+  requestMicrophonePermission,
 } from '../utils/speechRecognition';
 import {
-  getGeminiApiKey,
-  isGeminiConfigured,
   FreeAudioRecorder,
-  processAudioWithGemini
+  processAudioWithBackend,
 } from '../utils/geminiAudioService';
+import { normalizeText } from '../utils/queryParser';
 import { ConsentModal } from '../components/ConsentModal';
-import { GeminiKeyModal } from '../components/GeminiKeyModal';
 
 interface HomeScreenProps {
   onNavigate: (screen: ViewScreen) => void;
-  onSearch: (query: string) => void;
+  onSearch: (query: string, parsedOverride?: ParsedQuery) => void;
 }
 
 const EXAMPLE_QUERIES = [
   "Un roman d'amour, court, d'un auteur béninois",
   "Des contes pour enfants à moins de 1500 francs",
   "Un essai philosophique sur la mémoire",
-  "Un conte en fon",
+  "Un polar palpitant à Abidjan",
 ];
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
+const allBooks: Book[] = booksData as Book[];
+// Sélection variée de 3 livres découverte pour l'accueil
+const CURATED_BOOKS: Book[] = [
+  allBooks.find((b) => b.id === 'lagune-des-amours') || allBooks[0],
+  allBooks.find((b) => b.id === 'les-gardiennes-du-fleuve') || allBooks[1],
+  allBooks.find((b) => b.id === 'cotonou-les-ombres-du-marche') || allBooks[2],
+].filter(Boolean);
+
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) => {
   const [textInput, setTextInput] = useState('');
   const [micState, setMicState] = useState<'inactif' | 'ecoute' | 'analyse' | 'erreur'>('inactif');
   const [liveTranscript, setLiveTranscript] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
-  const [showGeminiModal, setShowGeminiModal] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [hasGeminiKey, setHasGeminiKey] = useState(false);
 
-  // Services
+  // Services vocaux
   const recognitionServiceRef = useRef<SpeechRecognitionService | null>(null);
   const audioRecorderRef = useRef<FreeAudioRecorder | null>(null);
-
-  // Synchroniser l'état de la clé Gemini
-  useEffect(() => {
-    setHasGeminiKey(isGeminiConfigured());
-  }, []);
 
   useEffect(() => {
     recognitionServiceRef.current = new SpeechRecognitionService();
@@ -82,35 +83,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
     setErrorMessage(null);
     setElapsedSeconds(0);
 
-    const geminiKey = getGeminiApiKey();
-
-    // MODE 1 : Si la clé Gemini 2.0 Flash est configurée -> Enregistrement MediaRecorder sans limite
-    if (geminiKey) {
-      if (!audioRecorderRef.current) return;
-
+    // Priorité 1 : Enregistreur continu haute fidélité MediaRecorder
+    if (audioRecorderRef.current && typeof navigator !== 'undefined' && typeof navigator.mediaDevices?.getUserMedia === 'function') {
       setMicState('ecoute');
-      setStatusMessage('Enregistrement en direct avec Gemini 2.0 Flash… Parlez librement sans limite de temps.');
+      setStatusMessage('Je vous écoute… Décrivez votre livre sans limite de temps.');
 
       const started = await audioRecorderRef.current.start((sec) => {
         setElapsedSeconds(sec);
       });
 
-      if (!started) {
-        setMicState('erreur');
-        setErrorMessage('Impossible d’accéder au microphone physique. Veuillez vérifier les autorisations de votre navigateur.');
+      if (started) {
+        return;
       }
-      return;
     }
 
-    // MODE 2 : Si pas de clé Gemini configurée
-    // Proposer d'abord d'ajouter la clé pour l'expérience sans limite, ou continuer avec le micro navigateur
-    const userPrefersBrowser = localStorage.getItem('oratama_prefer_browser_speech') === 'true';
-    if (!userPrefersBrowser) {
-      setShowGeminiModal(true);
-      return;
-    }
-
-    // Lancer la reconnaissance standard navigateur (Web Speech)
+    // Priorité 2 : Repli sur Web Speech API du navigateur
     await startBrowserSpeech();
   };
 
@@ -118,7 +105,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
     if (!isSpeechRecognitionSupported()) {
       setMicState('erreur');
       setErrorMessage(
-        'La reconnaissance vocale de ce navigateur n’est pas supportée. Activez Gemini 2.0 Flash avec votre clé gratuite ou utilisez le champ texte.'
+        'La reconnaissance vocale n’est pas accessible sur ce navigateur. Veuillez autoriser le microphone ou taper votre demande.'
       );
       return;
     }
@@ -126,12 +113,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
     if (!recognitionServiceRef.current) return;
 
     setMicState('ecoute');
-    setStatusMessage('Connexion au micro navigateur… Parlez à voix haute.');
+    setStatusMessage('Connexion au micro… Parlez à voix haute.');
 
     const started = await recognitionServiceRef.current.start({
       onStart: () => {
         setMicState('ecoute');
-        setStatusMessage('Je vous écoute… Décrivez votre livre sans limitation de temps.');
+        setStatusMessage('Je vous écoute… Décrivez votre recherche.');
       },
       onInterimResult: (transcript) => {
         setLiveTranscript(transcript);
@@ -167,41 +154,49 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
 
   // Arrêt volontaire de l'enregistrement par l'utilisateur
   const handleStopListening = async () => {
-    const geminiKey = getGeminiApiKey();
-
-    // Si on enregistre avec Gemini
-    if (geminiKey && audioRecorderRef.current?.isRecording) {
+    // Si enregistrement continu avec MediaRecorder
+    if (audioRecorderRef.current?.isRecording) {
       setMicState('analyse');
-      setStatusMessage('Analyse vocale et compréhension par Gemini 2.0 Flash en cours…');
+      setStatusMessage('Analyse et compréhension de votre demande vocale…');
 
       try {
         const audioBlob = await audioRecorderRef.current.stop();
         if (!audioBlob || audioBlob.size < 1000) {
           setMicState('inactif');
-          setStatusMessage('Enregistrement trop court. Maintenez le micro et parlez à voix haute.');
+          setStatusMessage('Enregistrement trop court. Touchez le micro et formulez votre demande.');
           return;
         }
 
-        // Appel multimodal à Gemini 2.0 Flash
-        const result = await processAudioWithGemini(audioBlob, geminiKey);
+        // Appel au backend intelligent sécurisé
+        const result = await processAudioWithBackend(audioBlob);
 
         if (result.transcript) {
           setLiveTranscript(result.transcript);
           setTextInput(result.transcript);
           setMicState('inactif');
           setStatusMessage(`Compris : « ${result.transcript} »`);
-          onSearch(result.transcript);
+
+          const parsedOverride: ParsedQuery = {
+            raw: result.transcript,
+            normalized: normalizeText(result.transcript),
+            genre: (result.genre as any) || undefined,
+            longueur: (result.longueur as any) || undefined,
+            pays: result.pays || undefined,
+            themes: result.themes || [],
+            maxPrixFcfa: result.maxPrixFcfa || undefined,
+            isUnderstood: true,
+          };
+
+          onSearch(result.transcript, parsedOverride);
         } else {
           setMicState('inactif');
-          setStatusMessage('Aucune parole claire détectée par Gemini. Veuillez réessayer.');
+          setStatusMessage('Aucune parole claire détectée. Veuillez réessayer.');
         }
       } catch (error) {
-        console.error('Erreur lors du traitement Gemini:', error);
+        console.error('Erreur lors du traitement vocal:', error);
         setMicState('erreur');
         setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : 'Erreur lors de la communication avec Gemini 2.0 Flash. Vérifiez votre clé API.'
+          'Le service de reconnaissance vocale est momentanément indisponible. Vous pouvez réessayer ou saisir votre recherche au clavier.'
         );
         setStatusMessage(null);
       }
@@ -223,7 +218,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
   const handleConsentCancelled = () => {
     setShowConsentModal(false);
     setMicState('inactif');
-    setStatusMessage('Vous pouvez taper votre demande directement dans le champ texte.');
+    setStatusMessage('Vous pouvez taper votre demande directement dans le champ texte ci-dessous.');
   };
 
   const handleTextSubmit = (e: React.FormEvent) => {
@@ -244,37 +239,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
 
   return (
     <div className="flex-1 flex flex-col justify-between max-w-md mx-auto w-full px-4 py-6">
-      {/* Sélecteur / Badge d'état du moteur vocal */}
-      <div className="flex items-center justify-center mb-3">
-        {hasGeminiKey ? (
-          <button
-            type="button"
-            onClick={() => setShowGeminiModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#EBF7EE] text-[#137333] border border-[#137333]/30 hover:bg-[#D9F2DE] transition-colors"
-          >
-            <span>✨</span>
-            <span>Moteur : Gemini 2.0 Flash (Écoute libre)</span>
-            <span className="text-[#137333]/70 font-normal underline ml-1">Modifier</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowGeminiModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#FDF3E3] text-[#B06000] border border-[#E9A23B]/50 hover:bg-[#FBEBD0] transition-colors shadow-sm"
-          >
-            <span>✨</span>
-            <span>Activer Gemini 2.0 Flash (Recommandé · Sans limite)</span>
-            <span className="font-extrabold ml-0.5">→</span>
-          </button>
-        )}
-      </div>
-
       {/* En-tête de page */}
-      <div className="text-center mt-1 mb-5">
+      <div className="text-center mt-1 mb-4">
         <h1 className="text-2xl sm:text-3xl font-black text-[#1B1B2A] tracking-tight">
           Demandez un livre à voix haute
         </h1>
-        <p className="text-sm text-[#6B6B7A] mt-2 leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#6B6B7A] mt-2 leading-relaxed">
           Décrivez librement ce que vous cherchez : genre, pays, thème ou budget. OraTama sélectionne les titres adaptés.
         </p>
       </div>
@@ -298,13 +268,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
           {micState === 'ecoute' && (
             <>
               <span className="w-2.5 h-2.5 rounded-full bg-[#E9A23B] animate-ping" aria-hidden="true" />
-              <span>Micro actif · Durée : {formatSeconds(elapsedSeconds)} (Sans limite)</span>
+              <span>Micro actif · Durée : {formatSeconds(elapsedSeconds)}</span>
             </>
           )}
           {micState === 'analyse' && (
             <>
               <span className="w-3 h-3 border-2 border-[#1F2A5C] border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-              <span>Analyse Gemini 2.0 Flash en cours…</span>
+              <span>Compréhension de votre demande…</span>
             </>
           )}
           {micState === 'inactif' && (
@@ -316,7 +286,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
           {micState === 'erreur' && (
             <>
               <span aria-hidden="true">⚠️</span>
-              <span>Micro : Problème d’accès détecté</span>
+              <span>Micro : Action requise</span>
             </>
           )}
         </div>
@@ -407,9 +377,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
           {micState === 'ecoute'
             ? 'Prenez tout votre temps · Touchez « Terminer » quand vous avez fini'
             : micState === 'analyse'
-            ? 'Gemini 2.0 Flash extrait les critères de votre recherche…'
+            ? 'Extraction sémantique des critères en cours…'
             : micState === 'erreur'
-            ? 'Touchez le bouton rouge pour réessayer ou écrivez ci-dessous'
+            ? 'Touchez le bouton pour réessayer ou écrivez ci-dessous'
             : 'Touchez le micro pour parler ou écrivez votre demande'}
         </p>
 
@@ -435,7 +405,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
           )}
         </div>
 
-        {/* Message d'erreur vocal avec options de résolution */}
+        {/* Message d'erreur vocal avec bouton d'autorisation */}
         {errorMessage && (
           <div
             role="alert"
@@ -443,7 +413,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
           >
             <p className="font-bold flex items-center gap-1.5 mb-0.5">
               <span>⚠️</span>
-              <span>Information vocale :</span>
+              <span>Accès microphone :</span>
             </p>
             <p className="text-[#1B1B2A]">{errorMessage}</p>
 
@@ -466,21 +436,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
               >
                 Autoriser le micro
               </button>
-
-              <button
-                type="button"
-                onClick={() => setShowGeminiModal(true)}
-                className="min-h-[38px] px-3.5 py-1.5 bg-white border border-[#1F2A5C] text-[#1F2A5C] text-[11px] font-bold rounded-lg hover:bg-[#F2EFE9] transition-colors"
-              >
-                Vérifier ma clé Gemini
-              </button>
             </div>
           </div>
         )}
       </div>
 
       {/* Alternative : Saisie textuelle toujours accessible */}
-      <div className="mt-2 mb-5">
+      <div className="mt-2 mb-4">
         <form onSubmit={handleTextSubmit} className="space-y-2">
           <label htmlFor="search-input" className="block text-xs font-semibold text-[#6B6B7A]">
             Ou tapez votre recherche au clavier :
@@ -505,8 +467,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
       </div>
 
       {/* 4 Exemples cliquables */}
-      <div className="mt-auto pt-2 border-t border-[#E8E3DA]">
-        <p className="text-xs font-semibold text-[#6B6B7A] mb-2.5">
+      <div className="pt-3 border-t border-[#E8E3DA]">
+        <p className="text-xs font-semibold text-[#6B6B7A] mb-2">
           Exemples de demandes vocales à tester :
         </p>
         <div className="flex flex-col gap-2">
@@ -515,10 +477,55 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
               key={idx}
               type="button"
               onClick={() => handleExampleClick(example)}
-              className="w-full min-h-[44px] text-left text-xs sm:text-sm p-3 rounded-xl bg-white hover:bg-[#E8ECFA]/50 border border-[#E8E3DA] text-[#1B1B2A] font-medium transition-colors flex items-center justify-between group"
+              className="w-full min-h-[44px] text-left text-xs sm:text-sm p-3 rounded-xl bg-white hover:bg-[#E8ECFA]/50 border border-[#E8E3DA] text-[#1B1B2A] font-medium transition-colors flex items-center justify-between group shadow-sm"
             >
               <span className="line-clamp-1">« {example} »</span>
               <span className="text-[#1F2A5C] text-xs font-bold shrink-0 ml-2 group-hover:translate-x-0.5 transition-transform" aria-hidden="true">
+                →
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Sélection découverte du catalogue (évite l'écran vide pour le curieux) */}
+      <div className="mt-6 pt-5 border-t border-[#E8E3DA] space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#6B6B7A]">
+            Ou découvrez une sélection du catalogue
+          </h2>
+          <button
+            type="button"
+            onClick={() => onSearch('')}
+            className="text-xs text-[#1F2A5C] hover:underline font-semibold"
+          >
+            Tout voir →
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-2.5">
+          {CURATED_BOOKS.map((book) => (
+            <button
+              key={book.id}
+              type="button"
+              onClick={() => onNavigate({ name: 'book', bookId: book.id })}
+              className="w-full min-h-[48px] p-2.5 rounded-xl bg-white hover:bg-[#E8ECFA]/40 border border-[#E8E3DA] text-left transition-all flex items-center gap-3 shadow-sm group"
+            >
+              <BookCover book={book} size="sm" className="shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#1F2A5C] bg-[#E8ECFA] px-1.5 py-0.5 rounded">
+                    {book.genre}
+                  </span>
+                  <span className="text-[11px] text-[#6B6B7A] truncate">{book.pays}</span>
+                </div>
+                <p className="font-bold text-xs text-[#1B1B2A] truncate mt-0.5 group-hover:text-[#1F2A5C]">
+                  {book.titre}
+                </p>
+                <p className="text-[11px] text-[#6B6B7A] truncate">
+                  {book.auteur} · {book.prixFcfa.toLocaleString('fr-FR')} FCFA
+                </p>
+              </div>
+              <span className="text-[#1F2A5C] text-sm font-bold group-hover:translate-x-1 transition-transform pr-1" aria-hidden="true">
                 →
               </span>
             </button>
@@ -531,21 +538,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSearch }) => {
         isOpen={showConsentModal}
         onAccept={handleConsentAccepted}
         onCancel={handleConsentCancelled}
-      />
-
-      {/* Modal de configuration de la clé Gemini */}
-      <GeminiKeyModal
-        isOpen={showGeminiModal}
-        onClose={() => setShowGeminiModal(false)}
-        onKeySaved={() => {
-          setHasGeminiKey(isGeminiConfigured());
-          setStatusMessage('Gemini 2.0 Flash activé ! Vous pouvez maintenant parler sans limite de temps.');
-        }}
-        onFallbackToBrowser={() => {
-          localStorage.setItem('oratama_prefer_browser_speech', 'true');
-          setHasGeminiKey(false);
-          void startBrowserSpeech();
-        }}
       />
     </div>
   );
