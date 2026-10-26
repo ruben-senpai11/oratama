@@ -83,7 +83,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         </p>
 
         {/* Puces des critères reconnus */}
-        {activeFilters.length > 0 ? (
+        {activeFilters.length > 0 && (
           <div>
             <p className="text-[11px] font-semibold text-[#656575] uppercase tracking-wider mb-1.5">
               Filtres compris (touchez pour retirer) :
@@ -110,10 +110,6 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               </button>
             </div>
           </div>
-        ) : (
-          <p className="text-xs text-[#656575] italic">
-            Aucun filtre spécifique actif (tous les livres sont affichés).
-          </p>
         )}
       </div>
 

@@ -539,7 +539,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
 
       {/* Sélecteur compact de moteur oral avec bascule au milieu (sans fond encombrant) */}
       <div className="mt-2 mb-3">
-        <div className="flex items-center justify-between gap-2 py-1 px-2 rounded-xl bg-transparent border border-[#E6E0D6]">
+        <div className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-xl bg-transparent border border-[#E6E0D6]">
           {/* Côté gauche : Web Speech */}
           <button
             type="button"
@@ -547,42 +547,46 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
             className={`flex-1 text-right py-1 px-1.5 rounded-lg transition-all cursor-pointer ${
               speechEngine === 'webspeech'
                 ? 'text-[#1E2958] font-bold'
-                : 'text-[#656575] hover:text-[#181826] opacity-60 hover:opacity-100'
+                : 'text-[#656575] hover:text-[#181826]'
             }`}
           >
             <div className="flex items-center justify-end gap-1.5">
-              <span className="text-xs font-bold leading-tight">Web Speech</span>
-              <span className="text-[9px] px-1 py-0.2 rounded border border-[#E6E0D6] text-[#656575] bg-transparent">
+              <span className={`text-xs leading-tight ${speechEngine === 'webspeech' ? 'font-bold text-[#1E2958]' : 'font-semibold text-[#656575]'}`}>
+                Web Speech
+              </span>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium transition-colors ${
+                speechEngine === 'webspeech'
+                  ? 'bg-[#1E2958] text-white shadow-xs'
+                  : 'bg-white border border-[#E6E0D6] text-[#656575]'
+              }`}>
                 Navigateur
               </span>
             </div>
-            <p className="text-[10px] text-[#656575] leading-tight mt-0.5">
+            <p className={`text-[10px] leading-tight mt-0.5 transition-colors ${speechEngine === 'webspeech' ? 'text-[#181826] font-medium' : 'text-[#656575]'}`}>
               transcription instantanée, peu précise
             </p>
           </button>
 
-          {/* Checkbox / Bascule au milieu */}
+          {/* Bascule au milieu : toujours active et colorée selon le moteur choisi */}
           <div className="shrink-0 flex items-center justify-center px-1">
-            <label
-              htmlFor="engine-toggle"
-              className="relative inline-flex items-center cursor-pointer select-none"
+            <button
+              type="button"
+              role="switch"
+              aria-label="Basculer entre Web Speech et Gemini IA"
+              aria-checked={speechEngine === 'gemini'}
+              onClick={() => setSpeechEngine(speechEngine === 'gemini' ? 'webspeech' : 'gemini')}
               title={speechEngine === 'gemini' ? 'Moteur actif : Gemini IA (cliquez pour Web Speech)' : 'Moteur actif : Web Speech (cliquez pour Gemini IA)'}
+              className={`w-11 h-6 rounded-full transition-colors duration-200 relative p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E2958] cursor-pointer shadow-inner ${
+                speechEngine === 'gemini' ? 'bg-[#E09228]' : 'bg-[#1E2958]'
+              }`}
             >
-              <input
-                id="engine-toggle"
-                type="checkbox"
-                role="switch"
-                aria-label="Basculer entre Web Speech et Gemini IA"
-                aria-checked={speechEngine === 'gemini'}
-                checked={speechEngine === 'gemini'}
-                onChange={(e) => setSpeechEngine(e.target.checked ? 'gemini' : 'webspeech')}
-                className="sr-only peer"
+              {/* Curseur blanc */}
+              <span
+                className={`block w-5 h-5 bg-white rounded-full transition-transform duration-200 shadow-md ${
+                  speechEngine === 'gemini' ? 'translate-x-5' : 'translate-x-0'
+                }`}
               />
-              {/* Piste de bascule */}
-              <div className="w-9 h-5 bg-[#E6E0D6] rounded-full peer peer-checked:bg-[#E09228] peer-focus-visible:ring-2 peer-focus-visible:ring-[#1E2958] transition-colors relative" />
-              {/* Curseur */}
-              <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform transform peer-checked:translate-x-4 shadow-xs" />
-            </label>
+            </button>
           </div>
 
           {/* Côté droit : Gemini IA (coché par défaut) */}
@@ -592,16 +596,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
             className={`flex-1 text-left py-1 px-1.5 rounded-lg transition-all cursor-pointer ${
               speechEngine === 'gemini'
                 ? 'text-[#181826] font-bold'
-                : 'text-[#656575] hover:text-[#181826] opacity-60 hover:opacity-100'
+                : 'text-[#656575] hover:text-[#181826]'
             }`}
           >
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold leading-tight">Gemini IA</span>
-              <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-[#E09228] text-white">
+              <span className={`text-xs leading-tight ${speechEngine === 'gemini' ? 'font-bold text-[#181826]' : 'font-semibold text-[#656575]'}`}>
+                Gemini IA
+              </span>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold transition-colors ${
+                speechEngine === 'gemini'
+                  ? 'bg-[#E09228] text-white shadow-xs'
+                  : 'bg-[#E09228]/20 text-[#A86414]'
+              }`}>
                 Recommandé
               </span>
             </div>
-            <p className="text-[10px] text-[#656575] leading-tight mt-0.5">
+            <p className={`text-[10px] leading-tight mt-0.5 transition-colors ${speechEngine === 'gemini' ? 'text-[#181826] font-medium' : 'text-[#656575]'}`}>
               transcription plus lente, mais plus efficace
             </p>
           </button>
