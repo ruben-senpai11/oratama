@@ -534,71 +534,78 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
         )}
       </div>
 
-      {/* Sélecteur de moteur oral : Web Speech (gauche) vs Gemini IA (droite, coché par défaut) */}
-      <fieldset className="mt-3 mb-4">
-        <legend className="sr-only">Choisir le moteur de transcription orale</legend>
-        <div className="grid grid-cols-2 gap-2.5">
-          {/* Option gauche : Web Speech */}
-          <label
-            className={`relative flex flex-col p-3 rounded-xl border cursor-pointer transition-all ${
+      {/* Sélecteur compact de moteur oral avec bascule au milieu (sans fond encombrant) */}
+      <div className="mt-2 mb-3">
+        <div className="flex items-center justify-between gap-2 py-1 px-2 rounded-xl bg-transparent border border-[#E6E0D6]">
+          {/* Côté gauche : Web Speech */}
+          <button
+            type="button"
+            onClick={() => setSpeechEngine('webspeech')}
+            className={`flex-1 text-right py-1 px-1.5 rounded-lg transition-all cursor-pointer ${
               speechEngine === 'webspeech'
-                ? 'bg-[#E9EDF9]/70 border-[#1E2958] shadow-sm ring-1 ring-[#1E2958]'
-                : 'bg-white border-[#E6E0D6] hover:border-[#1E2958]/30 hover:bg-[#FBF8F3]'
+                ? 'text-[#1E2958] font-bold'
+                : 'text-[#656575] hover:text-[#181826] opacity-60 hover:opacity-100'
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs sm:text-sm font-bold text-[#181826] flex items-center gap-1.5">
-                <input
-                  type="radio"
-                  name="speech-engine"
-                  value="webspeech"
-                  checked={speechEngine === 'webspeech'}
-                  onChange={() => setSpeechEngine('webspeech')}
-                  className="w-4 h-4 text-[#1E2958] border-[#656575] focus:ring-[#1E2958] cursor-pointer"
-                />
-                Web Speech
-              </span>
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/80 border border-[#E6E0D6] text-[#656575]">
+            <div className="flex items-center justify-end gap-1.5">
+              <span className="text-xs font-bold leading-tight">Web Speech</span>
+              <span className="text-[9px] px-1 py-0.2 rounded border border-[#E6E0D6] text-[#656575] bg-transparent">
                 Navigateur
               </span>
             </div>
-            <p className="text-[11px] text-[#656575] leading-snug pl-5">
+            <p className="text-[10px] text-[#656575] leading-tight mt-0.5">
               transcription instantanée, peu précise
             </p>
-          </label>
+          </button>
 
-          {/* Option droite : Gemini IA (coché par défaut) */}
-          <label
-            className={`relative flex flex-col p-3 rounded-xl border cursor-pointer transition-all ${
+          {/* Checkbox / Bascule au milieu */}
+          <div className="shrink-0 flex items-center justify-center px-1">
+            <label
+              htmlFor="engine-toggle"
+              className="relative inline-flex items-center cursor-pointer select-none"
+              title={speechEngine === 'gemini' ? 'Moteur actif : Gemini IA (cliquez pour Web Speech)' : 'Moteur actif : Web Speech (cliquez pour Gemini IA)'}
+            >
+              <input
+                id="engine-toggle"
+                type="checkbox"
+                role="switch"
+                aria-label="Basculer entre Web Speech et Gemini IA"
+                aria-checked={speechEngine === 'gemini'}
+                checked={speechEngine === 'gemini'}
+                onChange={(e) => setSpeechEngine(e.target.checked ? 'gemini' : 'webspeech')}
+                className="sr-only peer"
+              />
+              {/* Piste de bascule */}
+              <div className="w-9 h-5 bg-[#E6E0D6] rounded-full peer peer-checked:bg-[#E09228] peer-focus-visible:ring-2 peer-focus-visible:ring-[#1E2958] transition-colors relative" />
+              {/* Curseur */}
+              <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform transform peer-checked:translate-x-4 shadow-xs" />
+            </label>
+          </div>
+
+          {/* Côté droit : Gemini IA (coché par défaut) */}
+          <button
+            type="button"
+            onClick={() => setSpeechEngine('gemini')}
+            className={`flex-1 text-left py-1 px-1.5 rounded-lg transition-all cursor-pointer ${
               speechEngine === 'gemini'
-                ? 'bg-[#FDF4E7]/80 border-[#E09228] shadow-sm ring-1 ring-[#E09228]'
-                : 'bg-white border-[#E6E0D6] hover:border-[#E09228]/40 hover:bg-[#FBF8F3]'
+                ? 'text-[#181826] font-bold'
+                : 'text-[#656575] hover:text-[#181826] opacity-60 hover:opacity-100'
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs sm:text-sm font-bold text-[#181826] flex items-center gap-1.5">
-                <input
-                  type="radio"
-                  name="speech-engine"
-                  value="gemini"
-                  checked={speechEngine === 'gemini'}
-                  onChange={() => setSpeechEngine('gemini')}
-                  className="w-4 h-4 text-[#E09228] border-[#656575] focus:ring-[#E09228] cursor-pointer"
-                />
-                Gemini IA
-              </span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E09228] text-white shadow-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold leading-tight">Gemini IA</span>
+              <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-[#E09228] text-white">
                 Recommandé
               </span>
             </div>
-            <p className="text-[11px] text-[#656575] leading-snug pl-5">
+            <p className="text-[10px] text-[#656575] leading-tight mt-0.5">
               transcription plus lente, mais plus efficace
             </p>
-          </label>
+          </button>
         </div>
 
         {/* Optionnel : repliable pour saisie au clavier */}
-        <div className="mt-2 text-center">
+        <div className="mt-1.5 text-center">
           <button
             type="button"
             onClick={() => setShowTextInput(!showTextInput)}
@@ -625,7 +632,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
             </form>
           )}
         </div>
-      </fieldset>
+      </div>
 
       {/* 4 Exemples cliquables */}
       <div className="pt-3 border-t border-[#E6E0D6]">
