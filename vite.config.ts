@@ -3,55 +3,62 @@ import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-function voiceSearchApiPlugin(apiKey: string, model = 'gemini-flash-latest'): Plugin {
-  return {
-    name: 'voice-search-api',
-    configureServer(server) {
-      server.middlewares.use('/api/voice-status', (_req, res) => {
+function voiceSearchApiPlugin(apiKey: string, defaultModel = 'gemini-3.5-flash-lite'): Plugin {
+  const candidateModels = Array.from(
+    new Set([
+      defaultModel,
+      'gemini-3.5-flash-lite',
+      'gemini-flash-lite-latest',
+      'gemini-3.5-flash',
+    ])
+  );
+
+  const setupMiddlewares = (server: any) => {
+    server.middlewares.use('/api/voice-status', (_req: any, res: any) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 200;
+      res.end(
+        JSON.stringify({
+          available: Boolean(apiKey),
+          model: candidateModels[0],
+        })
+      );
+    });
+
+    server.middlewares.use('/api/voice-search', (req: any, res: any, next: any) => {
+      if (req.method !== 'POST') {
+        return next();
+      }
+
+      if (!apiKey) {
+        res.statusCode = 503;
         res.setHeader('Content-Type', 'application/json');
-        res.statusCode = 200;
         res.end(
           JSON.stringify({
-            available: Boolean(apiKey),
-            model,
+            error: 'Le service vocal Gemini n’est pas configuré sur le serveur (clé manquante).',
           })
         );
+        return;
+      }
+
+      let body = '';
+      req.on('data', (chunk: any) => {
+        body += chunk;
       });
 
-      server.middlewares.use('/api/voice-search', (req, res, next) => {
-        if (req.method !== 'POST') {
-          return next();
-        }
+      req.on('end', async () => {
+        try {
+          const parsed = JSON.parse(body);
+          const { audioBase64, mimeType } = parsed;
 
-        if (!apiKey) {
-          res.statusCode = 503;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(
-            JSON.stringify({
-              error: 'Le service vocal Gemini n’est pas configuré sur le serveur (clé manquante).',
-            })
-          );
-          return;
-        }
+          if (!audioBase64) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Données audio manquantes.' }));
+            return;
+          }
 
-        let body = '';
-        req.on('data', (chunk) => {
-          body += chunk;
-        });
-
-        req.on('end', async () => {
-          try {
-            const parsed = JSON.parse(body);
-            const { audioBase64, mimeType } = parsed;
-
-            if (!audioBase64) {
-              res.statusCode = 400;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'Données audio manquantes.' }));
-              return;
-            }
-
-            const prompt = `Tu es l'assistant vocal intelligent d'OraTama, la bibliothèque africaine orale.
+          const prompt = `Tu es l'assistant vocal intelligent d'OraTama, la bibliothèque africaine orale.
 Écoute attentivement cet enregistrement audio en français (qui peut comporter des accents ouest-africains, des noms de villes ou pays d'Afrique comme Cotonou, Porto-Novo, Ganvié, Abidjan, Dakar, Lomé, Bamako, etc., des titres de livres, des genres littéraires ou des termes en langues locales comme le fon, yoruba, wolof).
 
 Mission :
@@ -71,77 +78,99 @@ Réponds STRICTEMENT avec un objet JSON valide respectant cette structure :
 
 IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte avant ou après.`;
 
-            const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          let lastErrorMessage = '';
+          let extractedData: any = null;
 
-            const geminiRes = await fetch(geminiEndpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    role: 'user',
-                    parts: [
-                      {
-                        inlineData: {
-                          mimeType: (mimeType || 'audio/webm').split(';')[0],
-                          data: audioBase64,
+          for (const modelToTry of candidateModels) {
+            try {
+              const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTry}:generateContent?key=${apiKey}`;
+
+              const geminiRes = await fetch(geminiEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      role: 'user',
+                      parts: [
+                        {
+                          inlineData: {
+                            mimeType: (mimeType || 'audio/webm').split(';')[0],
+                            data: audioBase64,
+                          },
                         },
-                      },
-                      { text: prompt },
-                    ],
+                        { text: prompt },
+                      ],
+                    },
+                  ],
+                  generationConfig: {
+                    temperature: 0.1,
+                    responseMimeType: 'application/json',
                   },
-                ],
-                generationConfig: {
-                  temperature: 0.1,
-                  responseMimeType: 'application/json',
-                },
-              }),
-            });
+                }),
+                signal: AbortSignal.timeout(10000),
+              });
 
-            if (!geminiRes.ok) {
-              const errData = await geminiRes.json().catch(() => null);
-              const errMsg = errData?.error?.message || `Erreur Gemini (${geminiRes.status})`;
-              res.statusCode = geminiRes.status >= 400 && geminiRes.status < 600 ? geminiRes.status : 500;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: errMsg }));
-              return;
+              if (!geminiRes.ok) {
+                const errData = await geminiRes.json().catch(() => null);
+                lastErrorMessage = errData?.error?.message || `Erreur Gemini (${geminiRes.status})`;
+                continue;
+              }
+
+              const geminiData = await geminiRes.json();
+              const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (!rawText) {
+                lastErrorMessage = 'Gemini n’a renvoyé aucune transcription.';
+                continue;
+              }
+
+              const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+              extractedData = JSON.parse(cleaned);
+              break; // Succès !
+            } catch (modelErr: any) {
+              lastErrorMessage = modelErr?.message || 'Erreur réseau vers Gemini';
             }
-
-            const geminiData = await geminiRes.json();
-            const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!rawText) {
-              res.statusCode = 502;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'Gemini n’a renvoyé aucune transcription.' }));
-              return;
-            }
-
-            const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const extracted = JSON.parse(cleaned);
-
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(
-              JSON.stringify({
-                success: true,
-                data: {
-                  transcript: extracted.transcript || '',
-                  searchTerms: extracted.searchTerms || extracted.transcript || '',
-                  genre: extracted.genre || null,
-                  longueur: extracted.longueur || null,
-                  pays: extracted.pays || null,
-                  themes: Array.isArray(extracted.themes) ? extracted.themes : [],
-                  maxPrixFcfa: typeof extracted.maxPrixFcfa === 'number' ? extracted.maxPrixFcfa : null,
-                },
-              })
-            );
-          } catch (err: any) {
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: err?.message || 'Erreur serveur lors du traitement audio.' }));
           }
-        });
+
+          if (!extractedData) {
+            res.statusCode = 502;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: lastErrorMessage || 'Échec de transcription avec l’ensemble des modèles IA.' }));
+            return;
+          }
+
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(
+            JSON.stringify({
+              success: true,
+              data: {
+                transcript: extractedData.transcript || '',
+                searchTerms: extractedData.searchTerms || extractedData.transcript || '',
+                genre: extractedData.genre || null,
+                longueur: extractedData.longueur || null,
+                pays: extractedData.pays || null,
+                themes: Array.isArray(extractedData.themes) ? extractedData.themes : [],
+                maxPrixFcfa: typeof extractedData.maxPrixFcfa === 'number' ? extractedData.maxPrixFcfa : null,
+              },
+            })
+          );
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: err?.message || 'Erreur serveur lors du traitement audio.' }));
+        }
       });
+    });
+  };
+
+  return {
+    name: 'voice-search-api',
+    configureServer(server) {
+      setupMiddlewares(server);
+    },
+    configurePreviewServer(server) {
+      setupMiddlewares(server);
     },
   };
 }
@@ -149,7 +178,7 @@ IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte a
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
-  const model = env.GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const model = env.GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 
   return {
     plugins: [

@@ -11,7 +11,7 @@ import {
   FreeAudioRecorder,
   processAudioWithBackend,
 } from '../utils/geminiAudioService';
-import { normalizeText } from '../utils/queryParser';
+import { normalizeText, parseQuery } from '../utils/queryParser';
 import { ConsentModal } from '../components/ConsentModal';
 
 interface HomeScreenProps {
@@ -39,13 +39,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
   const [micState, setMicState] = useState<'inactif' | 'ecoute' | 'analyse' | 'erreur'>('inactif');
   const [liveTranscript, setLiveTranscript] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<{
+    type: 'permission' | 'server' | 'no-speech' | 'general';
+    message: string;
+  } | null>(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Services vocaux
   const recognitionServiceRef = useRef<SpeechRecognitionService | null>(null);
   const audioRecorderRef = useRef<FreeAudioRecorder | null>(null);
+  const liveTranscriptRef = useRef<string>('');
 
   useEffect(() => {
     recognitionServiceRef.current = new SpeechRecognitionService();
@@ -65,7 +69,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
   };
 
   const handleStartListening = () => {
-    setErrorMessage(null);
+    setErrorInfo(null);
     setStatusMessage(null);
 
     // Vérifier consentement micro préalable
@@ -80,133 +84,138 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
 
   const startActiveListening = async () => {
     setLiveTranscript('');
-    setErrorMessage(null);
+    liveTranscriptRef.current = '';
+    setErrorInfo(null);
     setElapsedSeconds(0);
 
-    // Priorité 1 : Enregistreur continu haute fidélité MediaRecorder
-    if (audioRecorderRef.current && typeof navigator !== 'undefined' && typeof navigator.mediaDevices?.getUserMedia === 'function') {
-      setMicState('ecoute');
-      setStatusMessage('Je vous écoute… Décrivez votre livre sans limite de temps.');
-
-      const started = await audioRecorderRef.current.start((sec) => {
+    // 1. Démarrer l'enregistreur continu MediaRecorder (haute fidélité pour le backend)
+    let recorderStarted = false;
+    if (
+      audioRecorderRef.current &&
+      typeof navigator !== 'undefined' &&
+      typeof navigator.mediaDevices?.getUserMedia === 'function'
+    ) {
+      recorderStarted = await audioRecorderRef.current.start((sec) => {
         setElapsedSeconds(sec);
       });
+    }
 
-      if (started) {
-        return;
+    // 2. Démarrer en parallèle Web Speech API si supporté (pour affichage temps réel & repli transparent)
+    if (isSpeechRecognitionSupported() && recognitionServiceRef.current) {
+      try {
+        void recognitionServiceRef.current.start({
+          onStart: () => {},
+          onInterimResult: (transcript) => {
+            setLiveTranscript(transcript);
+            liveTranscriptRef.current = transcript;
+          },
+          onFinalResult: (transcript) => {
+            setLiveTranscript(transcript);
+            liveTranscriptRef.current = transcript;
+          },
+          onError: () => {
+            // Ignoré si le MediaRecorder enregistre déjà en parallèle
+          },
+          onEnd: () => {},
+        });
+      } catch {
+        // ignore
       }
     }
 
-    // Priorité 2 : Repli sur Web Speech API du navigateur
-    await startBrowserSpeech();
-  };
-
-  const startBrowserSpeech = async () => {
-    if (!isSpeechRecognitionSupported()) {
-      setMicState('erreur');
-      setErrorMessage(
-        'La reconnaissance vocale n’est pas accessible sur ce navigateur. Veuillez autoriser le microphone ou taper votre demande.'
-      );
+    if (recorderStarted) {
+      setMicState('ecoute');
+      setStatusMessage('Je vous écoute… Décrivez votre livre sans limite de temps.');
       return;
     }
 
-    if (!recognitionServiceRef.current) return;
-
-    setMicState('ecoute');
-    setStatusMessage('Connexion au micro… Parlez à voix haute.');
-
-    const started = await recognitionServiceRef.current.start({
-      onStart: () => {
-        setMicState('ecoute');
-        setStatusMessage('Je vous écoute… Décrivez votre recherche.');
-      },
-      onInterimResult: (transcript) => {
-        setLiveTranscript(transcript);
-        setStatusMessage('Transcription en direct…');
-      },
-      onFinalResult: (transcript) => {
-        setLiveTranscript(transcript);
-        setTextInput(transcript);
-        setMicState('inactif');
-        setStatusMessage('Recherche en cours…');
-        onSearch(transcript);
-      },
-      onError: (type, message) => {
-        if (type === 'no-speech') {
-          setMicState('inactif');
-          setStatusMessage('Aucune voix entendue. Touchez à nouveau le micro ou écrivez.');
-          setErrorMessage(null);
-        } else {
-          setMicState('erreur');
-          setErrorMessage(message);
-          setStatusMessage(null);
-        }
-      },
-      onEnd: () => {
-        setMicState((prev) => (prev === 'ecoute' ? 'inactif' : prev));
-      },
-    });
-
-    if (!started && micState !== 'erreur') {
-      setMicState('inactif');
+    // Si MediaRecorder n'a pas pu démarrer
+    if (!isSpeechRecognitionSupported()) {
+      setMicState('erreur');
+      setErrorInfo({
+        type: 'permission',
+        message: 'Impossible d’accéder au microphone. Veuillez autoriser l’accès au micro dans votre navigateur.',
+      });
     }
   };
 
   // Arrêt volontaire de l'enregistrement par l'utilisateur
   const handleStopListening = async () => {
-    // Si enregistrement continu avec MediaRecorder
+    // Arrêter le service Web Speech
+    try {
+      recognitionServiceRef.current?.stop();
+    } catch {
+      // ignore
+    }
+
+    // Si MediaRecorder enregistrait
     if (audioRecorderRef.current?.isRecording) {
       setMicState('analyse');
       setStatusMessage('Analyse et compréhension de votre demande vocale…');
 
+      let audioBlob: Blob | null = null;
       try {
-        const audioBlob = await audioRecorderRef.current.stop();
-        if (!audioBlob || audioBlob.size < 1000) {
-          setMicState('inactif');
-          setStatusMessage('Enregistrement trop court. Touchez le micro et formulez votre demande.');
-          return;
-        }
-
-        // Appel au backend intelligent sécurisé
-        const result = await processAudioWithBackend(audioBlob);
-
-        if (result.transcript) {
-          setLiveTranscript(result.transcript);
-          setTextInput(result.transcript);
-          setMicState('inactif');
-          setStatusMessage(`Compris : « ${result.transcript} »`);
-
-          const parsedOverride: ParsedQuery = {
-            raw: result.transcript,
-            normalized: normalizeText(result.transcript),
-            genre: (result.genre as any) || undefined,
-            longueur: (result.longueur as any) || undefined,
-            pays: result.pays || undefined,
-            themes: result.themes || [],
-            maxPrixFcfa: result.maxPrixFcfa || undefined,
-            isUnderstood: true,
-          };
-
-          onSearch(result.transcript, parsedOverride);
-        } else {
-          setMicState('inactif');
-          setStatusMessage('Aucune parole claire détectée. Veuillez réessayer.');
-        }
-      } catch (error) {
-        console.error('Erreur lors du traitement vocal:', error);
-        setMicState('erreur');
-        setErrorMessage(
-          'Le service de reconnaissance vocale est momentanément indisponible. Vous pouvez réessayer ou saisir votre recherche au clavier.'
-        );
-        setStatusMessage(null);
+        audioBlob = await audioRecorderRef.current.stop();
+      } catch (e) {
+        console.warn('Erreur lors de l’arrêt du recorder:', e);
       }
+
+      // 1. Tenter la compréhension sémantique via le backend Gemini
+      if (audioBlob && audioBlob.size > 1000) {
+        try {
+          const result = await processAudioWithBackend(audioBlob);
+
+          if (result && result.transcript && result.transcript.trim()) {
+            setLiveTranscript(result.transcript);
+            setTextInput(result.transcript);
+            setMicState('inactif');
+            setStatusMessage(`Compris : « ${result.transcript} »`);
+
+            const parsedOverride: ParsedQuery = {
+              raw: result.transcript,
+              normalized: normalizeText(result.transcript),
+              genre: (result.genre as any) || undefined,
+              longueur: (result.longueur as any) || undefined,
+              pays: result.pays || undefined,
+              themes: result.themes || [],
+              maxPrixFcfa: result.maxPrixFcfa || undefined,
+              isUnderstood: true,
+            };
+
+            onSearch(result.transcript, parsedOverride);
+            return;
+          }
+        } catch (backendError) {
+          console.warn('Backend vocal indisponible, bascule sur la reconnaissance locale:', backendError);
+        }
+      }
+
+      // 2. REPLI TRANSPARENT : Si le backend n'a pas répondu, utiliser le texte capturé localement
+      const localText = (liveTranscriptRef.current || liveTranscript || '').trim();
+      if (localText) {
+        setLiveTranscript(localText);
+        setTextInput(localText);
+        setMicState('inactif');
+        setStatusMessage(`Compris : « ${localText} »`);
+        onSearch(localText, parseQuery(localText));
+        return;
+      }
+
+      // 3. Si aucun mot n'a été perçu (silence prolongé ou micro muet)
+      setMicState('inactif');
+      setStatusMessage('Aucune parole claire détectée. Touchez le micro et parlez distinctement.');
       return;
     }
 
-    // Sinon arrêt du Web Speech standard
-    recognitionServiceRef.current?.stop();
-    setMicState('inactif');
-    setStatusMessage(null);
+    // Si arrêt Web Speech pur
+    const localText = (liveTranscriptRef.current || liveTranscript || '').trim();
+    if (localText) {
+      setMicState('inactif');
+      onSearch(localText, parseQuery(localText));
+    } else {
+      setMicState('inactif');
+      setStatusMessage(null);
+    }
   };
 
   const handleConsentAccepted = () => {
@@ -225,10 +234,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
     e.preventDefault();
     const query = textInput.trim();
     if (!query) {
-      setErrorMessage('Veuillez formuler ou écrire votre demande.');
+      setErrorInfo({
+        type: 'general',
+        message: 'Veuillez formuler ou écrire votre demande.',
+      });
       return;
     }
-    setErrorMessage(null);
+    setErrorInfo(null);
     onSearch(query);
   };
 
@@ -405,37 +417,53 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
           )}
         </div>
 
-        {/* Message d'erreur vocal avec bouton d'autorisation */}
-        {errorMessage && (
+        {/* Message d'erreur vocal contextualisé */}
+        {errorInfo && (
           <div
             role="alert"
             className="w-full p-3.5 rounded-xl bg-[#FDF0ED] border border-[#B3261E]/40 text-[#B3261E] text-xs leading-relaxed space-y-2"
           >
             <p className="font-bold flex items-center gap-1.5 mb-0.5">
               <span>⚠️</span>
-              <span>Accès microphone :</span>
+              <span>{errorInfo.type === 'permission' ? 'Accès microphone requis :' : 'Information vocale :'}</span>
             </p>
-            <p className="text-[#1B1B2A]">{errorMessage}</p>
+            <p className="text-[#1B1B2A]">{errorInfo.message}</p>
 
             <div className="pt-2 border-t border-[#B3261E]/20 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  setStatusMessage('Demande d’autorisation micro en cours…');
-                  const res = await requestMicrophonePermission();
-                  if (res.granted) {
-                    setErrorMessage(null);
-                    setStatusMessage('Permission accordée ! Démarrage du micro…');
+              {errorInfo.type === 'permission' ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setStatusMessage('Demande d’autorisation micro en cours…');
+                    const res = await requestMicrophonePermission();
+                    if (res.granted) {
+                      setErrorInfo(null);
+                      setStatusMessage('Permission accordée ! Démarrage du micro…');
+                      void startActiveListening();
+                    } else {
+                      setStatusMessage(null);
+                      setErrorInfo({
+                        type: 'permission',
+                        message: res.error || 'Permission micro refusée par le navigateur.',
+                      });
+                    }
+                  }}
+                  className="min-h-[38px] px-3.5 py-1.5 bg-[#1F2A5C] text-white text-[11px] font-bold rounded-lg hover:bg-[#161E42] transition-colors shadow-sm"
+                >
+                  Autoriser le micro
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorInfo(null);
                     void startActiveListening();
-                  } else {
-                    setStatusMessage(null);
-                    setErrorMessage(res.error || 'Permission micro refusée par le navigateur.');
-                  }
-                }}
-                className="min-h-[38px] px-3.5 py-1.5 bg-[#1F2A5C] text-white text-[11px] font-bold rounded-lg hover:bg-[#161E42] transition-colors shadow-sm"
-              >
-                Autoriser le micro
-              </button>
+                  }}
+                  className="min-h-[38px] px-3.5 py-1.5 bg-[#1F2A5C] text-white text-[11px] font-bold rounded-lg hover:bg-[#161E42] transition-colors shadow-sm"
+                >
+                  Réessayer
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -488,7 +516,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
         </div>
       </div>
 
-      {/* Sélection découverte du catalogue (évite l'écran vide pour le curieux) */}
+      {/* Sélection découverte du catalogue */}
       <div className="mt-6 pt-5 border-t border-[#E8E3DA] space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#6B6B7A]">

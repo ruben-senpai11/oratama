@@ -1,7 +1,7 @@
 /**
  * Endpoint Serverless pour Vercel / Netlify
  * Traite la recherche vocale via Gemini Flash en toute sécurité côté serveur
- * sans jamais exposer GEMINI_API_KEY au client.
+ * avec bascule de résilience multi-modèles (gemini-3.5-flash-lite, etc.).
  */
 
 export default async function handler(req: any, res: any) {
@@ -11,7 +11,7 @@ export default async function handler(req: any, res: any) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const preferredModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 
   if (!apiKey) {
     res.status(503).json({
@@ -48,60 +48,84 @@ Réponds STRICTEMENT avec un objet JSON valide respectant cette structure :
 
 IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte avant ou après.`;
 
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const candidateModels = Array.from(
+      new Set([
+        preferredModel,
+        'gemini-3.5-flash-lite',
+        'gemini-flash-lite-latest',
+        'gemini-3.5-flash',
+      ])
+    );
 
-    const geminiRes = await fetch(geminiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
+    let lastErrorMessage = '';
+    let extractedData: any = null;
+
+    for (const modelToTry of candidateModels) {
+      try {
+        const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTry}:generateContent?key=${apiKey}`;
+
+        const geminiRes = await fetch(geminiEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
               {
-                inlineData: {
-                  mimeType: (mimeType || 'audio/webm').split(';')[0],
-                  data: audioBase64
-                }
-              },
-              { text: prompt }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: 'application/json'
+                role: 'user',
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: (mimeType || 'audio/webm').split(';')[0],
+                      data: audioBase64
+                    }
+                  },
+                  { text: prompt }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.1,
+              responseMimeType: 'application/json'
+            }
+          }),
+          signal: AbortSignal.timeout(10000)
+        });
+
+        if (!geminiRes.ok) {
+          const errData = await geminiRes.json().catch(() => null);
+          lastErrorMessage = errData?.error?.message || `Erreur Gemini (${geminiRes.status})`;
+          continue;
         }
-      })
-    });
 
-    if (!geminiRes.ok) {
-      const errData = await geminiRes.json().catch(() => null);
-      const errMsg = errData?.error?.message || `Erreur Gemini (${geminiRes.status})`;
-      res.status(geminiRes.status >= 400 && geminiRes.status < 600 ? geminiRes.status : 500).json({ error: errMsg });
-      return;
+        const geminiData = await geminiRes.json();
+        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawText) {
+          lastErrorMessage = 'Gemini n’a renvoyé aucune transcription.';
+          continue;
+        }
+
+        const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        extractedData = JSON.parse(cleaned);
+        break;
+      } catch (err: any) {
+        lastErrorMessage = err?.message || 'Erreur réseau vers Gemini';
+      }
     }
 
-    const geminiData = await geminiRes.json();
-    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) {
-      res.status(502).json({ error: 'Gemini n’a renvoyé aucune transcription.' });
+    if (!extractedData) {
+      res.status(502).json({ error: lastErrorMessage || 'Échec de transcription avec l’ensemble des modèles IA.' });
       return;
     }
-
-    const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const extracted = JSON.parse(cleaned);
 
     res.status(200).json({
       success: true,
       data: {
-        transcript: extracted.transcript || '',
-        searchTerms: extracted.searchTerms || extracted.transcript || '',
-        genre: extracted.genre || null,
-        longueur: extracted.longueur || null,
-        pays: extracted.pays || null,
-        themes: Array.isArray(extracted.themes) ? extracted.themes : [],
-        maxPrixFcfa: typeof extracted.maxPrixFcfa === 'number' ? extracted.maxPrixFcfa : null,
+        transcript: extractedData.transcript || '',
+        searchTerms: extractedData.searchTerms || extractedData.transcript || '',
+        genre: extractedData.genre || null,
+        longueur: extractedData.longueur || null,
+        pays: extractedData.pays || null,
+        themes: Array.isArray(extractedData.themes) ? extractedData.themes : [],
+        maxPrixFcfa: typeof extractedData.maxPrixFcfa === 'number' ? extractedData.maxPrixFcfa : null,
       }
     });
   } catch (err: any) {
