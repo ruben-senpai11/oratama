@@ -460,26 +460,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
             : 'Touchez le micro pour parler ou écrivez votre demande'}
         </p>
 
-        {/* Zone de transcription en direct (aria-live) */}
-        <div
-          role="region"
-          aria-live="polite"
-          aria-atomic="true"
-          className="w-full min-h-[52px] p-3 rounded-xl bg-white border border-[#E6E0D6] text-center flex flex-col justify-center shadow-sm"
-        >
-          {liveTranscript ? (
-            <p className="text-sm font-semibold text-[#181826] italic">
-              « {liveTranscript} »
-            </p>
-          ) : statusMessage ? (
-            <p className="text-xs font-medium text-[#1E2958] animate-pulse">
-              {statusMessage}
-            </p>
-          ) : (
-            <p className="text-xs text-[#656575]">
-              Votre voix sera transcrite ici dès que vous parlez…
-            </p>
-          )}
+        {/* Transcription accessible uniquement pour lecteurs d'écran */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {liveTranscript || statusMessage || ''}
         </div>
 
         {/* Message d'erreur vocal contextualisé */}
