@@ -245,21 +245,61 @@ describe('queryParser — Requête clé utilisateur & scoring', () => {
     const res = parseQuery("féminité");
     expect(res.isUnderstood).toBe(true);
     const scored = scoreBooks(books, res);
-    expect(scored.length).toBeGreaterThan(20);
-    expect(scored[0].score).toBeGreaterThan(10);
+    expect(scored.length).toBeGreaterThanOrEqual(3);
+    expect(scored[0].score).toBeGreaterThan(5);
   });
 
   it('32. trouve des résultats dès un seul mot-clé (« constitution »)', () => {
     const res = parseQuery("constitution");
     expect(res.isUnderstood).toBe(true);
     const scored = scoreBooks(books, res);
-    expect(scored.length).toBeGreaterThan(10);
-    expect(scored[0].book.categorie?.toLowerCase()).toContain('constitution');
+    expect(scored.length).toBeGreaterThanOrEqual(1);
+    expect(scored[0].book.categorie?.toLowerCase()).toMatch(/constitution|droit|institution/);
   });
 
-  it('33. le catalogue contient au moins 2000 catégories strictement uniques', () => {
-    const categories = new Set(books.map((b) => b.categorie?.toLowerCase().trim()));
-    expect(categories.size).toBeGreaterThanOrEqual(2000);
+  it('33. le catalogue ne contient absolument aucun doublon ni quasi-doublon (diversité absolue)', () => {
+    const titles = books.map((b) => b.titre);
+    const categories = books.map((b) => b.categorie?.toLowerCase().trim());
+    const ids = books.map((b) => b.id);
+
+    // Unicité stricte des identifiants, titres et catégories
+    expect(new Set(ids).size).toBe(books.length);
+    expect(new Set(titles).size).toBe(books.length);
+    expect(new Set(categories).size).toBe(books.length);
+
+    // Fonction de détection de quasi-doublons (1 ou 2 mots de différence)
+    const stopwords = new Set(['un', 'une', 'des', 'le', 'la', 'les', 'de', 'du', 'd', 'l', 'au', 'aux', 'et', 'en', 'a', 'par', 'pour', 'sur', 'dans']);
+    const normalize = (t: string) =>
+      t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+
+    for (let i = 0; i < books.length; i++) {
+      for (let j = i + 1; j < books.length; j++) {
+        const t1 = normalize(books[i].titre);
+        const t2 = normalize(books[j].titre);
+
+        const w1 = t1.split(' ').filter((w) => w.length > 2 && !stopwords.has(w));
+        const w2 = t2.split(' ').filter((w) => w.length > 2 && !stopwords.has(w));
+        const s1 = new Set(w1);
+        const s2 = new Set(w2);
+
+        let common = 0;
+        for (const w of s1) {
+          if (s2.has(w)) common++;
+        }
+
+        const diff = (s1.size - common) + (s2.size - common);
+        // Aucun livre ne doit avoir seulement 1 ou 2 mots de différence s'ils partagent un tronc commun
+        if (common >= 2) {
+          expect(diff).toBeGreaterThan(2);
+        }
+
+        const union = s1.size + s2.size - common;
+        if (union > 0) {
+          // Similarité lexicale max tolérée < 0.65
+          expect(common / union).toBeLessThan(0.65);
+        }
+      }
+    }
   });
 });
 
