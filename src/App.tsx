@@ -1,7 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { ViewScreen } from './types';
 import { Header } from './components/Header';
-import { PermanentBanner } from './components/PermanentBanner';
 import { InstallPrompt } from './components/InstallPrompt';
 import { DiagnosticPanel } from './components/DiagnosticPanel';
 import { parseQuery } from './utils/queryParser';
@@ -156,9 +155,6 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1B1B2A] font-sans antialiased">
-      {/* Bandeau permanent obligatoire sur TOUS les écrans */}
-      <PermanentBanner />
-
       {/* En-tête et navigation légère */}
       <Header currentScreen={currentScreen} onNavigate={navigateTo} onBack={handleBack} />
 
