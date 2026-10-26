@@ -2,25 +2,84 @@
 import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import fs from 'node:fs';
+import path from 'node:path';
 
-function voiceSearchApiPlugin(apiKey: string, defaultModel = 'gemini-3.5-flash-lite'): Plugin {
+function getRuntimeGeminiConfig(): { apiKey: string; model: string; candidateModels: string[] } {
+  let apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GEMINI_KEY ||
+    process.env.API_KEY ||
+    process.env.VITE_GEMINI_API_KEY ||
+    '';
+
+  let model = process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || '';
+
+  // Scanner les fichiers .env et .env.local dynamiquement à chaque appel
+  const envFiles = [
+    '.env',
+    '.env.local',
+    '.env.development',
+    '.env.development.local',
+    '.env.production',
+  ];
+
+  for (const filename of envFiles) {
+    try {
+      const fullPath = path.resolve(process.cwd(), filename);
+      if (fs.existsSync(fullPath)) {
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        for (const rawLine of content.split('\n')) {
+          const line = rawLine.trim();
+          if (!line || line.startsWith('#')) continue;
+          const eqIdx = line.indexOf('=');
+          if (eqIdx > 0) {
+            const varName = line.slice(0, eqIdx).trim().replace(/^export\s+/, '');
+            let val = line.slice(eqIdx + 1).trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            if (!apiKey && ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_KEY', 'API_KEY', 'VITE_GEMINI_API_KEY'].includes(varName) && val) {
+              apiKey = val;
+            }
+            if (!model && ['GEMINI_MODEL', 'VITE_GEMINI_MODEL'].includes(varName) && val) {
+              model = val;
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const preferredModel = model || 'gemini-3.5-flash-lite';
   const candidateModels = Array.from(
     new Set([
-      defaultModel,
+      preferredModel,
       'gemini-3.5-flash-lite',
-      'gemini-flash-lite-latest',
+      'gemini-3.1-flash-lite',
       'gemini-3.5-flash',
+      'gemini-3.8-flash',
+      'gemini-flash-latest',
     ])
   );
 
+  return { apiKey, model: preferredModel, candidateModels };
+}
+
+function voiceSearchApiPlugin(initialApiKey = '', defaultModel = 'gemini-3.5-flash-lite'): Plugin {
   const setupMiddlewares = (server: any) => {
     server.middlewares.use('/api/voice-status', (_req: any, res: any) => {
+      const { apiKey, candidateModels } = getRuntimeGeminiConfig();
+      const effectiveKey = apiKey || initialApiKey;
       res.setHeader('Content-Type', 'application/json');
       res.statusCode = 200;
       res.end(
         JSON.stringify({
-          available: Boolean(apiKey),
-          model: candidateModels[0],
+          available: Boolean(effectiveKey),
+          model: candidateModels[0] || defaultModel,
         })
       );
     });
@@ -30,12 +89,16 @@ function voiceSearchApiPlugin(apiKey: string, defaultModel = 'gemini-3.5-flash-l
         return next();
       }
 
-      if (!apiKey) {
+      const { apiKey, candidateModels } = getRuntimeGeminiConfig();
+      const effectiveKey = apiKey || initialApiKey;
+
+      if (!effectiveKey) {
+        console.warn('[API /api/voice-search] Aucune clé Gemini trouvée dans .env, .env.local ou process.env');
         res.statusCode = 503;
         res.setHeader('Content-Type', 'application/json');
         res.end(
           JSON.stringify({
-            error: 'Le service vocal Gemini n’est pas configuré sur le serveur (clé manquante).',
+            error: 'Le service vocal Gemini n’est pas configuré sur le serveur (clé manquante). Vérifiez que GEMINI_API_KEY est bien présent dans votre fichier .env ou .env.local.',
           })
         );
         return;
@@ -85,7 +148,7 @@ IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte a
 
           for (const modelToTry of candidateModels) {
             try {
-              const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTry}:generateContent?key=${apiKey}`;
+              const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTry}:generateContent?key=${effectiveKey}`;
 
               const geminiRes = await fetch(geminiEndpoint, {
                 method: 'POST',
@@ -110,7 +173,7 @@ IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte a
                     responseMimeType: 'application/json',
                   },
                 }),
-                signal: AbortSignal.timeout(12000),
+                signal: AbortSignal.timeout(15000),
               });
 
               if (!geminiRes.ok) {

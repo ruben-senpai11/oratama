@@ -1,8 +1,69 @@
 /**
  * Endpoint Serverless pour Vercel / Netlify
- * Traite la recherche vocale via Gemini Flash en toute sécurité côté serveur
- * avec bascule de résilience multi-modèles (gemini-3.5-flash-lite, etc.).
+ * Traite la recherche vocale via Google Gemini en toute sécurité côté serveur
+ * avec bascule de résilience multi-modèles (gemini-3.5-flash-lite, gemini-3.1-flash-lite, etc.).
  */
+import fs from 'node:fs';
+import path from 'node:path';
+
+function resolveApiKey(): { apiKey: string; model: string; candidateModels: string[] } {
+  let apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GEMINI_KEY ||
+    process.env.API_KEY ||
+    process.env.VITE_GEMINI_API_KEY ||
+    '';
+
+  let model = process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || '';
+
+  if (!apiKey) {
+    const candidateFiles = ['.env', '.env.local', '.env.development', '.env.production'];
+    for (const filename of candidateFiles) {
+      try {
+        const filePath = path.resolve(process.cwd(), filename);
+        if (fs.existsSync(filePath)) {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          for (const rawLine of content.split('\n')) {
+            const line = rawLine.trim();
+            if (!line || line.startsWith('#')) continue;
+            const eqIdx = line.indexOf('=');
+            if (eqIdx > 0) {
+              const varName = line.slice(0, eqIdx).trim().replace(/^export\s+/, '');
+              let val = line.slice(eqIdx + 1).trim();
+              if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                val = val.slice(1, -1);
+              }
+              if (!apiKey && ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_KEY', 'API_KEY', 'VITE_GEMINI_API_KEY'].includes(varName) && val) {
+                apiKey = val;
+              }
+              if (!model && ['GEMINI_MODEL', 'VITE_GEMINI_MODEL'].includes(varName) && val) {
+                model = val;
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+      if (apiKey) break;
+    }
+  }
+
+  const preferredModel = model || 'gemini-3.5-flash-lite';
+  const candidateModels = Array.from(
+    new Set([
+      preferredModel,
+      'gemini-3.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemini-3.5-flash',
+      'gemini-3.8-flash',
+      'gemini-flash-latest',
+    ])
+  );
+
+  return { apiKey, model: preferredModel, candidateModels };
+}
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -10,12 +71,11 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  const preferredModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+  const { apiKey, candidateModels } = resolveApiKey();
 
   if (!apiKey) {
     res.status(503).json({
-      error: 'Le service vocal Gemini n’est pas configuré sur le serveur (clé manquante).'
+      error: 'Le service vocal Gemini n’est pas configuré sur le serveur (clé manquante). Vérifiez que GEMINI_API_KEY est défini dans votre fichier .env ou .env.local.'
     });
     return;
   }
@@ -48,15 +108,6 @@ Réponds STRICTEMENT avec un objet JSON valide respectant cette structure :
 
 IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte avant ou après. Ne laisse "transcript" vide que si l'audio est un silence absolu.`;
 
-    const candidateModels = Array.from(
-      new Set([
-        preferredModel,
-        'gemini-3.5-flash-lite',
-        'gemini-flash-lite-latest',
-        'gemini-3.5-flash',
-      ])
-    );
-
     let lastErrorMessage = '';
     let extractedData: any = null;
 
@@ -87,7 +138,7 @@ IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte a
               responseMimeType: 'application/json'
             }
           }),
-          signal: AbortSignal.timeout(12000)
+          signal: AbortSignal.timeout(15000)
         });
 
         if (!geminiRes.ok) {
