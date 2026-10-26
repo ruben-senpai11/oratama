@@ -475,18 +475,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
 
       {/* 4 Exemples cliquables */}
       <div className="pt-3 border-t border-[#E6E0D6]">
-        <p className="text-xs font-semibold text-[#656575] mb-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#656575] mb-2.5">
           Exemples de demandes vocales à tester :
-        </p>
+        </h3>
         <div className="flex flex-col gap-2">
           {EXAMPLE_QUERIES.map((example, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => handleExampleClick(example)}
-              className="w-full min-h-[44px] text-left text-xs sm:text-sm p-3 rounded-xl bg-white hover:bg-[#E9EDF9]/50 border border-[#E6E0D6] text-[#181826] font-medium transition-colors flex items-center justify-between group shadow-sm"
+              className="w-full min-h-[42px] text-left text-xs sm:text-sm px-3.5 py-2.5 rounded-xl bg-transparent hover:bg-[#E9EDF9]/50 active:bg-[#E9EDF9] border border-[#E6E0D6] hover:border-[#1E2958]/30 text-[#181826] font-medium transition-all flex items-center justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E2958]/30"
             >
-              <span className="line-clamp-1">« {example} »</span>
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <svg
+                  className="w-4 h-4 text-[#E09228] shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                <span className="line-clamp-1 italic text-[#181826]">« {example} »</span>
+              </div>
               <span className="text-[#1E2958] text-xs font-bold shrink-0 ml-2 group-hover:translate-x-0.5 transition-transform" aria-hidden="true">
                 →
               </span>
