@@ -12,6 +12,7 @@ export interface Book {
   auteur: string;
   pays: string;
   genre: BookGenre;
+  categorie?: string; // Catégorie thématique spécifique et unique
   pages: number;
   prixFcfa: number;
   themes: string[];

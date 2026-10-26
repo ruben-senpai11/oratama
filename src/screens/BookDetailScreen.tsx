@@ -177,6 +177,11 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
           <p className="text-xs text-[#656575]">
             Origine : <span className="font-semibold text-[#181826]">{book.pays}</span>
           </p>
+          {book.categorie && (
+            <p className="text-xs text-[#1E2958] font-medium leading-tight">
+              Catégorie : <span className="font-semibold">{book.categorie}</span>
+            </p>
+          )}
           <div className="pt-1 flex flex-wrap gap-2 text-xs font-bold text-[#181826]">
             <span className="bg-white px-2 py-1 rounded-lg border border-[#E6E0D6]">
               {book.pages} pages

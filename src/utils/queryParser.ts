@@ -85,6 +85,9 @@ const THEME_PATTERNS: { theme: string; regex: RegExp }[] = [
   { theme: 'économie', regex: /\b(economie|economique|argent|finance|finances|commerce|tontine|marche|marches|entrepreneuriat|business)\b/ },
   { theme: 'politique', regex: /\b(politique|politiques|pouvoir|independance|independances|revolution|democratie|panafricanisme)\b/ },
   { theme: 'écologie', regex: /\b(ecologie|ecologique|environnement|climat|fleuve|biodiversite|lagune)\b/ },
+  { theme: 'femmes', regex: /\b(femme|femmes|feminite|feminin|feminine|feminines|feminisme|feministe|matriarcat|maternite|sororite)\b/ },
+  { theme: 'constitution', regex: /\b(constitution|constitutions|constitutionnel|constitutionnelle|constitue|institution|institutions|droit|droits)\b/ },
+  { theme: 'alarme', regex: /\b(alarme|alarmes|alerte|alertes|vigie|urgence)\b/ },
 ];
 
 /**
@@ -302,6 +305,46 @@ export function extractActiveFilters(parsed: ParsedQuery): MatchFilter[] {
 }
 
 /**
+ * Racinisation morphologique légère en français (suffix-stripping)
+ */
+export function getStem(word: string): string {
+  const w = normalizeText(word);
+  if (w.length <= 3) return w;
+  return w
+    .replace(/(?:ments?|ations?|ismes?|istes?|ibilites?|abilites?|ites?|iques?|aires?|rices?|teurs?|teuses?|euses?|eures?|ances?|ences?)$/, '')
+    .replace(/(?:aux|eux|euse|eurs|euses|iers?|ieres?)$/, '')
+    .replace(/(?:ant|ents?|ent|ais|ait|aient|eras?|erons?|erez|eront|e|es|s|x)$/, '');
+}
+
+/**
+ * Dictionnaire de clusters sémantiques et synonymes pour la recherche tolérante
+ */
+export const SYNONYM_CLUSTERS: Record<string, string[]> = {
+  feminite: ['femme', 'femmes', 'feminin', 'feminine', 'feminines', 'feminisme', 'feministe', 'matriarcat', 'maternite', 'fille'],
+  femme: ['femmes', 'feminite', 'feminin', 'feminine', 'feminines', 'feminisme', 'feministe', 'matriarcat', 'maternite'],
+  femmes: ['femme', 'feminite', 'feminin', 'feminine', 'feminines', 'feminisme', 'feministe', 'matriarcat', 'maternite'],
+  feminin: ['femme', 'femmes', 'feminite', 'feminine', 'feminisme'],
+  feminisme: ['femme', 'femmes', 'feminite', 'feminin', 'feministe', 'emancipation'],
+  constitution: ['constitutionnel', 'constitutionnelle', 'institutions', 'droit', 'droits', 'constitue'],
+  constitue: ['constitution', 'constitutionnel', 'institution', 'droit'],
+  alarme: ['alerte', 'urgence', 'vigie', 'menace', 'danger', 'eveil'],
+  alerte: ['alarme', 'urgence', 'vigie'],
+  plante: ['plantes', 'herbe', 'herbes', 'medicinale', 'medicinales', 'tisane', 'tisanes', 'pharmacopee', 'botanique', 'soin'],
+  plantes: ['plante', 'herbe', 'herbes', 'medicinale', 'medicinales', 'tisane', 'tisanes', 'pharmacopee'],
+  herbe: ['herbes', 'plante', 'plantes', 'tisane', 'tisanes', 'remede', 'pharmacopee'],
+  herbes: ['herbe', 'plante', 'plantes', 'tisane', 'tisanes', 'remede', 'pharmacopee'],
+  medicinale: ['plante', 'plantes', 'herbe', 'herbes', 'remede', 'soin', 'sante', 'guerison'],
+  medicinales: ['plante', 'plantes', 'herbe', 'herbes', 'remede', 'soin', 'sante', 'guerison'],
+  amour: ['amours', 'amoureux', 'amoureuse', 'romance', 'sentimental', 'passion', 'aimer'],
+  amours: ['amour', 'amoureux', 'amoureuse', 'romance', 'sentimental', 'passion', 'aimer'],
+  police: ['policier', 'policiers', 'enquete', 'enquetes', 'polar', 'polars', 'crime', 'crimes', 'meurtre'],
+  conte: ['contes', 'fable', 'fables', 'legende', 'legendes', 'griot', 'sagesse'],
+  contes: ['conte', 'fable', 'fables', 'legende', 'legendes', 'griot', 'sagesse'],
+  enfant: ['enfants', 'enfance', 'jeunesse', 'jeune', 'petits', 'petit'],
+  enfants: ['enfant', 'enfance', 'jeunesse', 'jeune', 'petits', 'petit'],
+};
+
+/**
  * Score et classe les livres selon les critères satisfaits
  */
 export function scoreBooks(
@@ -352,39 +395,39 @@ export function scoreBooks(
     let score = 0;
     const matchReasons: string[] = [];
 
-    // 1. Genre (poids 3)
+    // 1. Genre (poids 8)
     if (currentGenre) {
       if (book.genre === currentGenre) {
-        score += 3;
+        score += 8;
         matchReasons.push(`Genre : ${book.genre}`);
       }
     }
 
-    // 2. Pays (poids 3)
+    // 2. Pays (poids 8)
     if (currentCountry) {
       if (normalizeText(book.pays) === normalizeText(currentCountry)) {
-        score += 3;
+        score += 8;
         matchReasons.push(`Auteur de ${book.pays}`);
       }
     }
 
-    // 3. Longueur (poids 2)
+    // 3. Longueur (poids 12 pour respecter rigoureusement la préférence explicite)
     if (currentLength) {
       if (currentLength === 'court' && book.pages < 150) {
-        score += 2;
+        score += 12;
         matchReasons.push(`Livre court (${book.pages} pages)`);
       } else if (currentLength === 'long' && book.pages >= 150) {
-        score += 2;
+        score += 12;
         matchReasons.push(`Livre long (${book.pages} pages)`);
       }
     }
 
-    // 4. Thèmes (poids 2 chacun)
+    // 4. Thèmes (poids 4 chacun)
     for (const theme of currentThemes) {
       const normTheme = normalizeText(theme);
       const hasTheme = book.themes.some((t) => normalizeText(t) === normTheme);
       if (hasTheme) {
-        score += 2;
+        score += 4;
         matchReasons.push(`Thème : ${theme}`);
       }
     }
@@ -397,39 +440,96 @@ export function scoreBooks(
       }
     }
 
-    // 6. Recherche textuelle ciblée sur les mots significatifs (exclut rigoureusement les stopwords comme livre, les, sur)
+    // 6. Recherche textuelle multi-champs hautement tolérante (titre, catégorie, thèmes, auteur, résumé, racines et synonymes)
     if (meaningfulWords.length > 0) {
-      const normTitle = normalizeText(book.titre);
-      const normAuthor = normalizeText(book.auteur);
-      const normResume = normalizeText(book.resume);
-      const normThemes = book.themes.map((t) => normalizeText(t)).join(' ');
+      const normTitle = ` ${normalizeText(book.titre)} `;
+      const normCategory = ` ${normalizeText(book.categorie || '')} `;
+      const normAuthor = ` ${normalizeText(book.auteur)} `;
+      const normResume = ` ${normalizeText(book.resume)} `;
+      const normThemes = ` ${book.themes.map((t) => normalizeText(t)).join(' ')} `;
 
       let keywordMatchCount = 0;
 
       for (const w of meaningfulWords) {
         let matched = false;
-        // Correspondance dans le titre
-        if (normTitle.includes(w)) {
-          keywordMatchCount += 8;
+        const stemW = getStem(w);
+        const synonyms = SYNONYM_CLUSTERS[w] || [];
+        const wPattern = ` ${w} `;
+
+        // 6.1 Correspondance exacte mot entier ou synonyme dans le titre (priorité absolue)
+        if (normTitle.includes(wPattern)) {
+          keywordMatchCount += 14;
           matchReasons.push(`Titre correspond à « ${w} »`);
           matched = true;
+        } else {
+          for (const syn of synonyms) {
+            if (normTitle.includes(` ${syn} `)) {
+              keywordMatchCount += 12;
+              matchReasons.push(`Titre correspond à « ${syn} »`);
+              matched = true;
+              break;
+            }
+          }
         }
-        // Correspondance dans les thèmes
-        if (normThemes.includes(w)) {
-          keywordMatchCount += 5;
+
+        // 6.2 Correspondance mot entier ou synonyme dans la catégorie
+        if (w !== currentGenre) {
+          if (normCategory.includes(wPattern)) {
+            keywordMatchCount += 10;
+            matchReasons.push(`Catégorie : « ${book.categorie} »`);
+            matched = true;
+          } else {
+            for (const syn of synonyms) {
+              if (normCategory.includes(` ${syn} `)) {
+                keywordMatchCount += 8;
+                matchReasons.push(`Catégorie liée : « ${book.categorie} »`);
+                matched = true;
+                break;
+              }
+            }
+          }
+        }
+
+        // 6.3 Correspondance mot entier dans les thèmes
+        if (normThemes.includes(wPattern)) {
+          keywordMatchCount += 7;
           matchReasons.push(`Thème associé à « ${w} »`);
           matched = true;
         }
-        // Correspondance dans l'auteur
-        if (normAuthor.includes(w)) {
-          keywordMatchCount += 4;
+
+        // 6.4 Correspondance mot entier dans l'auteur
+        if (normAuthor.includes(wPattern)) {
+          keywordMatchCount += 6;
           matchReasons.push(`Auteur correspond à « ${w} »`);
           matched = true;
         }
-        // Correspondance dans le résumé
-        if (!matched && normResume.includes(w)) {
-          keywordMatchCount += 2;
+
+        // 6.5 Correspondance mot entier dans le résumé
+        if (normResume.includes(wPattern)) {
+          keywordMatchCount += 3;
           matchReasons.push(`Sujet abordé : « ${w} »`);
+          matched = true;
+        }
+
+        // 6.6 Racinisation (stemming) si non encore matché
+        if (!matched && stemW.length >= 4) {
+          if (normTitle.includes(stemW)) {
+            keywordMatchCount += 6;
+            matchReasons.push(`Mot clé approchant : « ${w} »`);
+            matched = true;
+          } else if (w !== currentGenre && normCategory.includes(stemW)) {
+            keywordMatchCount += 5;
+            matchReasons.push(`Catégorie approchante : « ${book.categorie} »`);
+            matched = true;
+          } else if (normThemes.includes(stemW)) {
+            keywordMatchCount += 4;
+            matchReasons.push(`Thème approchant : « ${w} »`);
+            matched = true;
+          } else if (normResume.includes(stemW)) {
+            keywordMatchCount += 2;
+            matchReasons.push(`Mot clé approchant : « ${w} »`);
+            matched = true;
+          }
         }
       }
 

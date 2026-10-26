@@ -124,7 +124,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       {/* Liste des cartes ou état vide */}
       {scoredResults.length > 0 ? (
         <div className="space-y-3" role="feed" aria-label="Résultats de recherche">
-          {scoredResults.slice(0, visibleCount).map(({ book, matchReasons }) => {
+          {scoredResults.slice(0, visibleCount).map(({ book }) => {
             const hasAuthorRecording = recordedBookIds.has(book.id);
 
             return (
@@ -165,31 +165,29 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                       {book.auteur} · <span className="font-medium text-[#181826]">{book.pays}</span>
                     </p>
 
+                    {book.categorie && (
+                      <p className="text-[11px] font-medium text-[#1E2958] line-clamp-1 mt-0.5">
+                        {book.categorie}
+                      </p>
+                    )}
+
                     <p className="text-[11px] text-[#656575] mt-0.5">
                       {book.pages} pages · {book.themes.slice(0, 3).join(', ')}
                     </p>
                   </div>
 
-                  {/* Badges voix et pourquoi ce résultat */}
-                  <div className="mt-2 pt-2 border-t border-[#E6E0D6] space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          hasAuthorRecording
-                            ? 'bg-[#E09228] text-[#181826] border border-[#C27B1A]'
-                            : 'bg-[#E9EDF9] text-[#1E2958] border border-[#1E2958]/20'
-                        }`}
-                      >
-                        <span aria-hidden="true">🎙️</span>
-                        {hasAuthorRecording ? 'Voix de l’auteur (enregistrée)' : 'Voix de l’auteur'}
-                      </span>
-                    </div>
-
-                    {/* Ligne "Pourquoi ce résultat" */}
-                    <p className="text-[11px] text-[#656575] leading-snug line-clamp-2">
-                      <strong className="text-[#1E2958] font-semibold">Pourquoi ce résultat : </strong>
-                      {matchReasons.length > 0 ? matchReasons.join(' · ') : 'Titre disponible au catalogue'}
-                    </p>
+                  {/* Badge voix */}
+                  <div className="mt-2 pt-2 border-t border-[#E6E0D6] flex items-center justify-between">
+                    <span
+                      className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        hasAuthorRecording
+                          ? 'bg-[#E09228] text-[#181826] border border-[#C27B1A]'
+                          : 'bg-[#E9EDF9] text-[#1E2958] border border-[#1E2958]/20'
+                      }`}
+                    >
+                      <span aria-hidden="true">🎙️</span>
+                      {hasAuthorRecording ? 'Voix de l’auteur (enregistrée)' : 'Voix de l’auteur'}
+                    </span>
                   </div>
                 </div>
               </article>

@@ -224,4 +224,42 @@ describe('queryParser — Requête clé utilisateur & scoring', () => {
     expect(scoredDiop.length).toBeGreaterThan(0);
     expect(scoredDiop.some((s) => s.book.auteur === 'Birago Diop')).toBe(true);
   });
+
+  it('30. analyse « alarme sur la féminité constitue » et trouve des résultats pertinents', () => {
+    const res = parseQuery("alarme sur la féminité constitue");
+    expect(res.isUnderstood).toBe(true);
+    const scored = scoreBooks(books, res);
+    expect(scored.length).toBeGreaterThan(0);
+    // Vérifie que les livres trouvés traitent de la féminité ou des femmes
+    const topBooks = scored.slice(0, 5);
+    const hasFeminiteTopic = topBooks.some((s) =>
+      s.book.categorie?.toLowerCase().includes('féminité') ||
+      s.book.categorie?.toLowerCase().includes('femmes') ||
+      s.book.themes.includes('féminité') ||
+      s.book.themes.includes('femmes')
+    );
+    expect(hasFeminiteTopic).toBe(true);
+  });
+
+  it('31. trouve des résultats dès un seul mot-clé (« féminité »)', () => {
+    const res = parseQuery("féminité");
+    expect(res.isUnderstood).toBe(true);
+    const scored = scoreBooks(books, res);
+    expect(scored.length).toBeGreaterThan(20);
+    expect(scored[0].score).toBeGreaterThan(10);
+  });
+
+  it('32. trouve des résultats dès un seul mot-clé (« constitution »)', () => {
+    const res = parseQuery("constitution");
+    expect(res.isUnderstood).toBe(true);
+    const scored = scoreBooks(books, res);
+    expect(scored.length).toBeGreaterThan(10);
+    expect(scored[0].book.categorie?.toLowerCase()).toContain('constitution');
+  });
+
+  it('33. le catalogue contient au moins 2000 catégories strictement uniques', () => {
+    const categories = new Set(books.map((b) => b.categorie?.toLowerCase().trim()));
+    expect(categories.size).toBeGreaterThanOrEqual(2000);
+  });
 });
+
