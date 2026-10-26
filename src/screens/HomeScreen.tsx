@@ -28,10 +28,36 @@ const CURATED_BOOKS: Book[] = [
   allBooks.find((b) => b.id === 'les-gardiennes-du-fleuve') || allBooks[2],
 ].filter(Boolean);
 
+const STORAGE_KEY_SPEECH_ENGINE = 'oratama_speech_engine';
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) => {
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
-  const [speechEngine, setSpeechEngine] = useState<'webspeech' | 'gemini'>('gemini');
+  const [speechEngine, setSpeechEngineState] = useState<'webspeech' | 'gemini'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_SPEECH_ENGINE);
+        if (saved === 'webspeech' || saved === 'gemini') {
+          return saved;
+        }
+      } catch {
+        // Mode privé ou restrictions locales
+      }
+    }
+    return 'gemini';
+  });
+
+  const setSpeechEngine = (engine: 'webspeech' | 'gemini') => {
+    setSpeechEngineState(engine);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_SPEECH_ENGINE, engine);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   const [micState, setMicState] = useState<'inactif' | 'ecoute' | 'analyse' | 'erreur'>('inactif');
   const [liveTranscript, setLiveTranscript] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -48,6 +74,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
   const speechRecognitionRef = useRef<SpeechRecognitionService | null>(null);
   const lastWebSpeechTranscriptRef = useRef<string>('');
   const webSpeechTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Synchronisation dynamique si les préférences changent dans un autre onglet
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY_SPEECH_ENGINE && (e.newValue === 'webspeech' || e.newValue === 'gemini')) {
+        setSpeechEngineState(e.newValue);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     recorderRef.current = new AudioRecorderService();
