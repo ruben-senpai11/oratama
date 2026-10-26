@@ -191,4 +191,37 @@ describe('queryParser — Requête clé utilisateur & scoring', () => {
     // Doit maintenant inclure d'autres romans d'amour (ex: ivoirien ou camerounais)
     expect(scoredWithoutCountry.length).toBeGreaterThan(1);
   });
+
+  it('28. analyse « Un livre sur les plantes, les herbes médicinales » et ne matche pas les stopwords', () => {
+    const query = "Un livre sur les plantes, les herbes médicinales.";
+    const res = parseQuery(query);
+
+    expect(res.themes).toContain('santé');
+    expect(res.isUnderstood).toBe(true);
+
+    const scored = scoreBooks(books, res);
+    expect(scored.length).toBeGreaterThan(0);
+
+    // Les meilleurs résultats doivent porter sur les plantes / herbes médicinales
+    const top = scored[0];
+    expect(top.score).toBeGreaterThan(5);
+    // Vérifier qu'aucun matchReason ne contient de stopword ridicule comme "livre", "les", "sur"
+    for (const r of top.matchReasons) {
+      expect(r).not.toContain('« livre »');
+      expect(r).not.toContain('« les »');
+      expect(r).not.toContain('« sur »');
+    }
+  });
+
+  it('29. trouve les classiques africains réels par auteur ou titre', () => {
+    const resMaran = parseQuery("Batouala de René Maran");
+    const scoredMaran = scoreBooks(books, resMaran);
+    expect(scoredMaran.length).toBeGreaterThan(0);
+    expect(scoredMaran[0].book.auteur).toBe('René Maran');
+
+    const resDiop = parseQuery("Les contes de Birago Diop");
+    const scoredDiop = scoreBooks(books, resDiop);
+    expect(scoredDiop.length).toBeGreaterThan(0);
+    expect(scoredDiop.some((s) => s.book.auteur === 'Birago Diop')).toBe(true);
+  });
 });

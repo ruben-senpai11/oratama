@@ -303,6 +303,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6 MiB pour supporter le catalogue enrichi hors-ligne
           globPatterns: ['**/*.{js,css,html,svg,png,jpg,json}'],
           runtimeCaching: [
             {

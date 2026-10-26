@@ -223,7 +223,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             Aucun livre ne correspond exactement à tous vos critères combinés
           </h2>
           <p className="text-xs text-[#656575] leading-relaxed">
-            Nous avons cherché parmi les 1 000 ouvrages fictifs. Essayez de retirer certains filtres (comme la longueur ou le prix) ou découvrez nos suggestions ci-dessous.
+            Nous avons cherché dans l'ensemble du catalogue OraTama. Essayez de retirer certains filtres (comme la longueur ou le prix) ou découvrez nos suggestions ci-dessous.
           </p>
 
           <div className="pt-2">

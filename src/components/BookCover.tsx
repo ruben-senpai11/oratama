@@ -41,10 +41,10 @@ export const BookCover: React.FC<BookCoverProps> = ({ book, size = 'md', classNa
         aria-hidden="true"
       />
 
-      {/* En-tête de couverture : Tag genre et pastille */}
-      <div className="relative z-10 flex justify-between items-center gap-1">
+      {/* En-tête de couverture : Tag genre */}
+      <div className="relative z-10 flex justify-start items-center">
         <span
-          className="uppercase tracking-wider font-bold rounded backdrop-blur-sm truncate max-w-[70px]"
+          className="uppercase tracking-wider font-bold rounded backdrop-blur-sm truncate max-w-[90px]"
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.32)',
             color: '#FFFFFF',
@@ -54,17 +54,6 @@ export const BookCover: React.FC<BookCoverProps> = ({ book, size = 'md', classNa
           }}
         >
           {book.genre}
-        </span>
-        <span
-          className="font-semibold rounded bg-black/40 text-amber-200 shrink-0"
-          style={{
-            fontSize: size === 'sm' ? '7px' : '8px',
-            padding: size === 'sm' ? '1px 3.5px' : '2px 4px',
-            lineHeight: 1.1,
-          }}
-          title="Exemple fictif"
-        >
-          Fictif
         </span>
       </div>
 

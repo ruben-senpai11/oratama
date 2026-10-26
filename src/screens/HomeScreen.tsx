@@ -4,8 +4,8 @@ import booksData from '../data/books.json';
 import { BookCover } from '../components/BookCover';
 import { AudioRecorderService } from '../utils/audioRecorder';
 import { processAudioWithBackend } from '../utils/geminiAudioService';
-import { requestMicrophonePermission } from '../utils/speechRecognition';
-import { normalizeText } from '../utils/queryParser';
+import { SpeechRecognitionService, requestMicrophonePermission } from '../utils/speechRecognition';
+import { normalizeText, parseQuery } from '../utils/queryParser';
 import { ConsentModal } from '../components/ConsentModal';
 
 interface HomeScreenProps {
@@ -15,8 +15,8 @@ interface HomeScreenProps {
 
 const EXAMPLE_QUERIES = [
   "Un roman d'amour, court, d'un auteur béninois",
+  "Un livre sur les plantes, les herbes médicinales",
   "Des contes pour enfants à moins de 1500 francs",
-  "Un essai philosophique sur la mémoire",
   "Un polar palpitant à Abidjan",
 ];
 
@@ -24,12 +24,14 @@ const allBooks: Book[] = booksData as Book[];
 // Sélection variée de 3 livres découverte pour l'accueil
 const CURATED_BOOKS: Book[] = [
   allBooks.find((b) => b.id === 'lagune-des-amours') || allBooks[0],
-  allBooks.find((b) => b.id === 'les-gardiennes-du-fleuve') || allBooks[1],
-  allBooks.find((b) => b.id === 'cotonou-les-ombres-du-marche') || allBooks[2],
+  allBooks.find((b) => b.id === 'batouala-rene-maran') || allBooks[1],
+  allBooks.find((b) => b.id === 'les-gardiennes-du-fleuve') || allBooks[2],
 ].filter(Boolean);
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) => {
   const [textInput, setTextInput] = useState('');
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [speechEngine, setSpeechEngine] = useState<'webspeech' | 'gemini'>('gemini');
   const [micState, setMicState] = useState<'inactif' | 'ecoute' | 'analyse' | 'erreur'>('inactif');
   const [liveTranscript, setLiveTranscript] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -40,14 +42,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // Enregistreur audio identique à la page Auteur (éprouvé et fonctionnel)
+  // Moteur Gemini : Enregistreur audio continu
   const recorderRef = useRef<AudioRecorderService | null>(null);
+  // Moteur Web Speech : Reconnaissance locale navigateur
+  const speechRecognitionRef = useRef<SpeechRecognitionService | null>(null);
+  const lastWebSpeechTranscriptRef = useRef<string>('');
 
   useEffect(() => {
     recorderRef.current = new AudioRecorderService();
+    speechRecognitionRef.current = new SpeechRecognitionService();
 
     return () => {
       recorderRef.current?.cancelRecording();
+      speechRecognitionRef.current?.abort();
     };
   }, []);
 
@@ -76,7 +83,49 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
     setLiveTranscript('');
     setErrorInfo(null);
     setElapsedSeconds(0);
+    lastWebSpeechTranscriptRef.current = '';
 
+    // MOTEUR 1 : Web Speech API (instantané local)
+    if (speechEngine === 'webspeech') {
+      if (!speechRecognitionRef.current) return;
+      setStatusMessage('Démarrage de Web Speech API…');
+
+      const started = await speechRecognitionRef.current.start({
+        onStart: () => {
+          setMicState('ecoute');
+          setStatusMessage('Web Speech actif : je vous écoute… Parlez distinctement.');
+        },
+        onInterimResult: (interim) => {
+          setLiveTranscript(interim);
+          lastWebSpeechTranscriptRef.current = interim;
+        },
+        onFinalResult: (final) => {
+          setLiveTranscript(final);
+          lastWebSpeechTranscriptRef.current = final;
+          handleWebSpeechComplete(final);
+        },
+        onError: (errType, msg) => {
+          setMicState('erreur');
+          setErrorInfo({
+            type: errType === 'not-allowed' ? 'permission' : errType === 'no-speech' ? 'no-speech' : 'general',
+            message: msg || 'Erreur lors de la reconnaissance Web Speech.',
+          });
+          setStatusMessage('Reconnaissance interrompue. Touchez « Réessayer » pour recommencer.');
+        },
+        onEnd: () => {
+          if (lastWebSpeechTranscriptRef.current) {
+            handleWebSpeechComplete(lastWebSpeechTranscriptRef.current);
+          }
+        },
+      });
+
+      if (!started) {
+        setMicState('erreur');
+      }
+      return;
+    }
+
+    // MOTEUR 2 : Gemini IA (par défaut, analyse multimodale côté serveur)
     if (!recorderRef.current) return;
 
     setStatusMessage('Activation du microphone…');
@@ -101,7 +150,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
 
     if (started) {
       setMicState('ecoute');
-      setStatusMessage('Je vous écoute… Décrivez votre livre sans limite de temps.');
+      setStatusMessage('Gemini IA à l’écoute… Décrivez votre livre sans limite de temps.');
     } else {
       setMicState('erreur');
       if (!errorInfo) {
@@ -115,17 +164,54 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
 
   // Arrêt volontaire par l'utilisateur
   const handleStopListening = () => {
+    if (speechEngine === 'webspeech') {
+      setMicState('analyse');
+      setStatusMessage('Finalisation de la transcription…');
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.stop();
+        setTimeout(() => {
+          if (lastWebSpeechTranscriptRef.current) {
+            handleWebSpeechComplete(lastWebSpeechTranscriptRef.current);
+          }
+        }, 400);
+      }
+      return;
+    }
+
+    // Moteur Gemini
     setMicState('analyse');
-    setStatusMessage('Compréhension de votre demande par l’IA…');
+    setStatusMessage('Compréhension de votre demande par l’IA Gemini…');
     if (recorderRef.current?.isRecording()) {
       recorderRef.current.stopRecording();
     }
   };
 
-  // Traitement audio une fois l'enregistrement finalisé
+  // Traitement direct pour Web Speech API
+  const handleWebSpeechComplete = (transcript: string) => {
+    const cleanText = transcript.trim();
+    if (!cleanText) {
+      setMicState('erreur');
+      setErrorInfo({
+        type: 'no-speech',
+        message: 'Aucune parole distincte n’a été reconnue. Touchez « Réessayer » ou choisissez le moteur Gemini IA pour une analyse plus approfondie.',
+      });
+      setStatusMessage('Aucune parole détectée. Touchez « Réessayer » ou tapez au clavier ci-dessous.');
+      return;
+    }
+
+    setMicState('inactif');
+    setStatusMessage(`Compris : « ${cleanText} »`);
+    setTextInput(cleanText);
+
+    // Analyse et parsing des critères de recherche
+    const parsed = parseQuery(cleanText);
+    onSearch(cleanText, parsed);
+  };
+
+  // Traitement audio Gemini une fois l'enregistrement finalisé
   const handleAudioRecorded = async (blob: Blob, _mime: string) => {
     setMicState('analyse');
-    setStatusMessage('Compréhension de votre demande par l’IA…');
+    setStatusMessage('Compréhension de votre demande par l’IA Gemini…');
 
     if (!blob || blob.size < 100) {
       setMicState('erreur');
@@ -448,30 +534,98 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
         )}
       </div>
 
-      {/* Alternative : Saisie textuelle toujours accessible */}
-      <div className="mt-2 mb-4">
-        <form onSubmit={handleTextSubmit} className="space-y-2">
-          <label htmlFor="search-input" className="block text-xs font-semibold text-[#656575]">
-            Ou tapez votre recherche au clavier :
+      {/* Sélecteur de moteur vocal : Web Speech (gauche) vs Gemini IA (droite, coché par défaut) */}
+      <fieldset className="mt-3 mb-4">
+        <legend className="sr-only">Choisir le moteur de transcription vocale</legend>
+        <div className="grid grid-cols-2 gap-2.5">
+          {/* Option gauche : Web Speech */}
+          <label
+            className={`relative flex flex-col p-3 rounded-xl border cursor-pointer transition-all ${
+              speechEngine === 'webspeech'
+                ? 'bg-[#E9EDF9]/70 border-[#1E2958] shadow-sm ring-1 ring-[#1E2958]'
+                : 'bg-white border-[#E6E0D6] hover:border-[#1E2958]/30 hover:bg-[#FBF8F3]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs sm:text-sm font-bold text-[#181826] flex items-center gap-1.5">
+                <input
+                  type="radio"
+                  name="speech-engine"
+                  value="webspeech"
+                  checked={speechEngine === 'webspeech'}
+                  onChange={() => setSpeechEngine('webspeech')}
+                  className="w-4 h-4 text-[#1E2958] border-[#656575] focus:ring-[#1E2958] cursor-pointer"
+                />
+                Web Speech
+              </span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/80 border border-[#E6E0D6] text-[#656575]">
+                Navigateur
+              </span>
+            </div>
+            <p className="text-[11px] text-[#656575] leading-snug pl-5">
+              transcription instantanée, peu précise
+            </p>
           </label>
-          <div className="flex gap-2">
-            <input
-              id="search-input"
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder="Ex: Un roman d'amour béninois…"
-              className="flex-1 min-h-[44px] px-3.5 py-2 text-sm bg-white border border-[#E6E0D6] rounded-xl text-[#181826] placeholder-[#656575] focus:border-[#1E2958] focus:ring-1 focus:ring-[#1E2958]"
-            />
-            <button
-              type="submit"
-              className="min-h-[44px] px-5 py-2 bg-[#1E2958] hover:bg-[#141C3E] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
-            >
-              Trouver
-            </button>
-          </div>
-        </form>
-      </div>
+
+          {/* Option droite : Gemini IA (coché par défaut) */}
+          <label
+            className={`relative flex flex-col p-3 rounded-xl border cursor-pointer transition-all ${
+              speechEngine === 'gemini'
+                ? 'bg-[#FDF4E7]/80 border-[#E09228] shadow-sm ring-1 ring-[#E09228]'
+                : 'bg-white border-[#E6E0D6] hover:border-[#E09228]/40 hover:bg-[#FBF8F3]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs sm:text-sm font-bold text-[#181826] flex items-center gap-1.5">
+                <input
+                  type="radio"
+                  name="speech-engine"
+                  value="gemini"
+                  checked={speechEngine === 'gemini'}
+                  onChange={() => setSpeechEngine('gemini')}
+                  className="w-4 h-4 text-[#E09228] border-[#656575] focus:ring-[#E09228] cursor-pointer"
+                />
+                Gemini IA
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E09228] text-white shadow-xs">
+                Recommandé
+              </span>
+            </div>
+            <p className="text-[11px] text-[#656575] leading-snug pl-5">
+              transcription plus lente, mais plus efficace
+            </p>
+          </label>
+        </div>
+
+        {/* Optionnel : repliable pour saisie au clavier */}
+        <div className="mt-2 text-center">
+          <button
+            type="button"
+            onClick={() => setShowTextInput(!showTextInput)}
+            className="text-[11px] text-[#656575] hover:text-[#1E2958] underline underline-offset-2 transition-colors cursor-pointer"
+          >
+            {showTextInput ? 'Masquer la saisie au clavier' : 'Ou saisir au clavier si vous ne pouvez pas parler'}
+          </button>
+          {showTextInput && (
+            <form onSubmit={handleTextSubmit} className="mt-2 flex gap-2">
+              <input
+                id="search-input"
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder="Ex: Un roman d'amour béninois…"
+                className="flex-1 min-h-[40px] px-3.5 py-1.5 text-xs sm:text-sm bg-white border border-[#E6E0D6] rounded-xl text-[#181826] placeholder-[#656575] focus:border-[#1E2958] focus:ring-1 focus:ring-[#1E2958]"
+              />
+              <button
+                type="submit"
+                className="min-h-[40px] px-4 py-1.5 bg-[#1E2958] hover:bg-[#141C3E] text-white text-xs sm:text-sm font-semibold rounded-xl transition-colors shadow-sm cursor-pointer"
+              >
+                Trouver
+              </button>
+            </form>
+          )}
+        </div>
+      </fieldset>
 
       {/* 4 Exemples cliquables */}
       <div className="pt-3 border-t border-[#E6E0D6]">

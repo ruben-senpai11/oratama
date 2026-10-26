@@ -77,8 +77,32 @@ const THEME_PATTERNS: { theme: string; regex: RegExp }[] = [
   { theme: 'nature', regex: /\b(nature|baobab|baobabs|arbre|arbres|foret|forets|animaux|faune|terre)\b/ },
   { theme: 'philosophie', regex: /\b(philosophie|philosophe|sagesse|pensee|penser|reflexion)\b/ },
   { theme: 'société', regex: /\b(societe|societes|social|politique|communaute|solidarite|hospitalite)\b/ },
-  { theme: 'exil', regex: /\b(exil|exile|exiles|migration|migrant|diaspora)\b/ },
+  { theme: 'santé', regex: /\b(sante|plante|plantes|herbe|herbes|medicinale|medicinales|medicinal|pharmacopee|botanique|medecine|soin|soins|guerison|tisane|tisanes|remede|remedes|feuille|feuilles|racine|racines|traditherapie|bien etre)\b/ },
+  { theme: 'cuisine', regex: /\b(cuisine|gastronomie|recette|recettes|culinaire|saveur|saveurs|nourriture|repas)\b/ },
+  { theme: 'spiritualité', regex: /\b(spiritualite|spirituel|vodun|voodoo|fa|dieu|dieux|croyance|croyances|sacre|mystique|oracle)\b/ },
+  { theme: 'enquête', regex: /\b(enquete|enquetes|polar|polars|thriller|thrillers|policier|policiers|crime|crimes|meurtre|meurtres|mystere|mysteres)\b/ },
+  { theme: 'science-fiction', regex: /\b(science fiction|afrofuturisme|futur|futuriste|robot|robots|technologie|technologique|spatial)\b/ },
+  { theme: 'économie', regex: /\b(economie|economique|argent|finance|finances|commerce|tontine|marche|marches|entrepreneuriat|business)\b/ },
+  { theme: 'politique', regex: /\b(politique|politiques|pouvoir|independance|independances|revolution|democratie|panafricanisme)\b/ },
+  { theme: 'écologie', regex: /\b(ecologie|ecologique|environnement|climat|fleuve|biodiversite|lagune)\b/ },
 ];
+
+/**
+ * Stopwords français à exclure impérativement des correspondances textuelles
+ */
+export const FRENCH_STOPWORDS = new Set([
+  'un', 'une', 'des', 'le', 'la', 'les', 'de', 'du', 'd', 'l',
+  'au', 'aux', 'en', 'et', 'ou', 'a', 'par', 'pour', 'avec', 'sans',
+  'sous', 'sur', 'dans', 'qui', 'que', 'quoi', 'dont', 'ou',
+  'je', 'tu', 'il', 'elle', 'on', 'nous', 'vous', 'ils', 'elles',
+  'me', 'te', 'se', 'ce', 'cet', 'cette', 'ces', 'mon', 'ton', 'son', 'mes', 'tes', 'ses',
+  's', 'm', 't', 'c', 'n', 'j', 'y',
+  'cherche', 'recherche', 'chercher', 'veux', 'voudrais', 'aimerais', 'trouve', 'trouver', 'donne', 'montre', 'lire',
+  'livre', 'livres', 'ouvrage', 'ouvrages', 'bouquin', 'bouquins', 'titre', 'titres',
+  'auteur', 'auteurs', 'autrice', 'autrices', 'ecrivain', 'ecrivains',
+  'bonjour', 'salut', 'merci', 'svp', 'plait', 'plaît', 'sil', 'te', 'euh', 'hum', 'hein', 'ah', 'oh',
+  'comme', 'tout', 'tous', 'toute', 'toutes', 'aussi', 'tres', 'plus', 'bien', 'est', 'sont', 'faire'
+]);
 
 /**
  * Analyse une requête textuelle ou vocale en français pur
@@ -185,20 +209,9 @@ export function parseQuery(rawQuery: string): ParsedQuery {
   }
 
   // 7. Détection de pertinence / compréhension
-  const STOPWORDS = new Set([
-    'un', 'une', 'des', 'le', 'la', 'les', 'de', 'du', 'd', 'l',
-    'au', 'aux', 'en', 'et', 'ou', 'a', 'par', 'pour', 'avec', 'sans',
-    'sous', 'sur', 'dans', 'qui', 'que', 'je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles',
-    'me', 'te', 'se', 'ce', 'cet', 'cette', 'ces', 'mon', 'ton', 'son', 'mes', 'tes', 'ses',
-    's', 'm', 't', 'c', 'n', 'j', 'y',
-    'cherche', 'veux', 'voudrais', 'trouve', 'trouver', 'donne', 'montre', 'lire',
-    'livre', 'livres', 'ouvrage', 'ouvrages', 'auteur', 'auteurs', 'autrice', 'autrices', 'ecrivain',
-    'bonjour', 'salut', 'merci', 'svp', 'plait', 'plaît', 'sil', 'te', 'euh', 'hum', 'hein', 'ah', 'oh'
-  ]);
-
   const meaningfulTokens = normalized
     .split(/\s+/)
-    .filter((w) => w.length > 2 && !STOPWORDS.has(w));
+    .filter((w) => w.length >= 3 && !FRENCH_STOPWORDS.has(w));
 
   const hasAnyFilter = Boolean(
     detectedGenre ||
@@ -324,7 +337,14 @@ export function scoreBooks(
       currentMaxPrice !== undefined
   );
 
-  const normalizedQuery = parsed.normalized;
+  const normalizedQuery = parsed.normalized || '';
+  const meaningfulWords = Array.from(
+    new Set(
+      normalizedQuery
+        .split(/\s+/)
+        .filter((w) => w.length >= 3 && !FRENCH_STOPWORDS.has(w))
+    )
+  );
 
   const results: ScoredBook[] = [];
 
@@ -377,41 +397,63 @@ export function scoreBooks(
       }
     }
 
-    // 6. Si aucun filtre spécifique n'est actif, mais du texte libre : recherche plein texte sur titre / auteur / résumé
-    if (!hasAnyActiveFilter && normalizedQuery) {
+    // 6. Recherche textuelle ciblée sur les mots significatifs (exclut rigoureusement les stopwords comme livre, les, sur)
+    if (meaningfulWords.length > 0) {
       const normTitle = normalizeText(book.titre);
       const normAuthor = normalizeText(book.auteur);
       const normResume = normalizeText(book.resume);
+      const normThemes = book.themes.map((t) => normalizeText(t)).join(' ');
 
-      const words = normalizedQuery.split(/\s+/).filter((w) => w.length > 2);
-      let textMatchCount = 0;
+      let keywordMatchCount = 0;
 
-      for (const w of words) {
+      for (const w of meaningfulWords) {
+        let matched = false;
+        // Correspondance dans le titre
         if (normTitle.includes(w)) {
-          textMatchCount += 4;
+          keywordMatchCount += 8;
           matchReasons.push(`Titre correspond à « ${w} »`);
-        } else if (normAuthor.includes(w)) {
-          textMatchCount += 3;
+          matched = true;
+        }
+        // Correspondance dans les thèmes
+        if (normThemes.includes(w)) {
+          keywordMatchCount += 5;
+          matchReasons.push(`Thème associé à « ${w} »`);
+          matched = true;
+        }
+        // Correspondance dans l'auteur
+        if (normAuthor.includes(w)) {
+          keywordMatchCount += 4;
           matchReasons.push(`Auteur correspond à « ${w} »`);
-        } else if (normResume.includes(w)) {
-          textMatchCount += 1;
+          matched = true;
+        }
+        // Correspondance dans le résumé
+        if (!matched && normResume.includes(w)) {
+          keywordMatchCount += 2;
+          matchReasons.push(`Sujet abordé : « ${w} »`);
         }
       }
 
-      if (textMatchCount > 0) {
-        score += textMatchCount;
-        if (!matchReasons.length) {
-          matchReasons.push('Correspondance dans le résumé');
-        }
-      }
+      score += keywordMatchCount;
     }
 
-    // Si on a des critères satisfaits, on conserve le livre
-    if (score > 0) {
+    // Déduplication des motifs d'affichage
+    const uniqueMatchReasons = Array.from(new Set(matchReasons));
+
+    // Si des critères ou des mots significatifs étaient recherchés, ne retenir que les livres pertinents
+    if (hasAnyActiveFilter || meaningfulWords.length > 0) {
+      if (score > 0) {
+        results.push({
+          book,
+          score,
+          matchReasons: uniqueMatchReasons,
+        });
+      }
+    } else {
+      // Aucun filtre ni mot-clé (recherche vide ou "Tout voir") : afficher tout le catalogue
       results.push({
         book,
-        score,
-        matchReasons,
+        score: 1,
+        matchReasons: [],
       });
     }
   }
