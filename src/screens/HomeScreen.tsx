@@ -369,10 +369,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
         </div>
 
         {/* Bouton Micro grand format */}
-        <div className="relative flex items-center justify-center">
+        <div className="relative flex items-center justify-center my-2">
           {micState === 'ecoute' && (
             <div
-              className="absolute w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#E09228]/30 animate-ping pointer-events-none"
+              className="absolute w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-[#E09228]/30 animate-ping pointer-events-none"
               aria-hidden="true"
             />
           )}
@@ -384,10 +384,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
             aria-label={
               micState === 'ecoute'
                 ? 'Arrêter et lancer la recherche'
-                : 'Démarrer la recherche vocale'
+                : 'Démarrer la recherche orale'
             }
             aria-pressed={micState === 'ecoute'}
-            className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center transition-all shadow-lg active:scale-95 focus-visible:ring-4 focus-visible:ring-[#1E2958]/40 ${
+            className={`w-32 h-32 sm:w-36 sm:h-36 rounded-full flex flex-col items-center justify-center transition-all shadow-xl active:scale-95 focus-visible:ring-4 focus-visible:ring-[#1E2958]/40 cursor-pointer ${
               micState === 'ecoute'
                 ? 'bg-[#E09228] text-[#181826] ring-4 ring-[#E09228]/50 animate-mic-pulse border-2 border-[#1E2958]'
                 : micState === 'analyse'
@@ -400,24 +400,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
             {micState === 'ecoute' ? (
               <>
                 <svg
-                  className="w-8 h-8 mb-0.5"
+                  className="w-11 h-11 mb-1"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
                   <rect x="6" y="6" width="12" height="12" rx="2" />
                 </svg>
-                <span className="text-[10px] font-black uppercase tracking-wider">Terminer</span>
+                <span className="text-xs sm:text-sm font-black uppercase tracking-wider">Terminer</span>
               </>
             ) : micState === 'analyse' ? (
               <>
-                <span className="w-7 h-7 border-3 border-white border-t-transparent rounded-full animate-spin mb-1" />
-                <span className="text-[9px] font-black uppercase tracking-wider">Analyse</span>
+                <span className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-1.5" />
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider">Analyse</span>
               </>
             ) : micState === 'erreur' ? (
               <>
                 <svg
-                  className="w-7 h-7 mb-0.5"
+                  className="w-10 h-10 mb-1"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -426,12 +426,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <span className="text-[10px] font-black uppercase tracking-wider">Réessayer</span>
+                <span className="text-xs sm:text-sm font-black uppercase tracking-wider">Réessayer</span>
               </>
             ) : (
               <>
                 <svg
-                  className="w-8 h-8 mb-0.5"
+                  className="w-12 h-12 mb-1"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -444,7 +444,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
                     d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
                   />
                 </svg>
-                <span className="text-[10px] font-black uppercase tracking-wider">Parler</span>
+                <span className="text-xs sm:text-sm font-black uppercase tracking-wider">Parler</span>
               </>
             )}
           </button>
@@ -490,7 +490,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
           >
             <p className="font-bold flex items-center gap-1.5 mb-0.5">
               <span>⚠️</span>
-              <span>{errorInfo.type === 'permission' ? 'Accès microphone requis :' : 'Information vocale :'}</span>
+              <span>{errorInfo.type === 'permission' ? 'Accès microphone requis :' : 'Information orale :'}</span>
             </p>
             <p className="text-[#181826]">{errorInfo.message}</p>
 
@@ -534,9 +534,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
         )}
       </div>
 
-      {/* Sélecteur de moteur vocal : Web Speech (gauche) vs Gemini IA (droite, coché par défaut) */}
+      {/* Sélecteur de moteur oral : Web Speech (gauche) vs Gemini IA (droite, coché par défaut) */}
       <fieldset className="mt-3 mb-4">
-        <legend className="sr-only">Choisir le moteur de transcription vocale</legend>
+        <legend className="sr-only">Choisir le moteur de transcription orale</legend>
         <div className="grid grid-cols-2 gap-2.5">
           {/* Option gauche : Web Speech */}
           <label
@@ -618,7 +618,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
               />
               <button
                 type="submit"
-                className="min-h-[40px] px-4 py-1.5 bg-[#1E2958] hover:bg-[#141C3E] text-white text-xs sm:text-sm font-semibold rounded-xl transition-colors shadow-sm cursor-pointer"
+                className="min-h-[40px] px-4 py-1.5 bg-white hover:bg-[#E9EDF9] text-[#1E2958] border border-[#1E2958] text-xs sm:text-sm font-semibold rounded-xl transition-colors shadow-xs cursor-pointer"
               >
                 Trouver
               </button>
@@ -630,7 +630,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
       {/* 4 Exemples cliquables */}
       <div className="pt-3 border-t border-[#E6E0D6]">
         <h3 className="text-xs font-bold uppercase tracking-wider text-[#656575] mb-2.5">
-          Exemples de demandes vocales à tester :
+          Exemples de demandes orales à tester :
         </h3>
         <div className="flex flex-col gap-2">
           {EXAMPLE_QUERIES.map((example, idx) => (

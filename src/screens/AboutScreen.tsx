@@ -14,7 +14,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onNavigate }) => {
           À propos & Feuille de route
         </h1>
         <p className="text-xs text-[#656575]">
-          Concept vocal pour une bibliothèque numérique africaine
+          Concept oral pour une bibliothèque numérique africaine
         </p>
       </div>
 
@@ -30,7 +30,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onNavigate }) => {
           OraTama est un concept non officiel inspiré de Tama, ni affilié ni approuvé par Tama.
         </p>
         <p className="leading-relaxed text-[#656575]">
-          Ce prototype est une exploration de design et d’ingénierie front-end conçue pour être partagée publiquement afin de nourrir la réflexion sur l’accessibilité vocale en Afrique. Aucun logo, aucune couverture ni aucune donnée propriétaire d’une plateforme commerciale n’ont été utilisés.
+          Ce prototype est une exploration de design et d’ingénierie front-end conçue pour être partagée publiquement afin de nourrir la réflexion sur l’accessibilité orale en Afrique. Aucun logo, aucune couverture ni aucune donnée propriétaire d’une plateforme commerciale n’ont été utilisés.
         </p>
         <p className="text-[#181826] font-medium pt-1 border-t border-[#E6E0D6]">
           Pour retirer ce concept, écrivez-moi :{' '}
@@ -52,7 +52,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onNavigate }) => {
           <li className="flex items-start gap-2">
             <span className="text-[#1E2958] font-bold">1.</span>
             <span>
-              <strong className="text-[#181826]">Recherche vocale intelligente & sécurisée :</strong> transcription haute fidélité des toponymes et accents africains avec extraction sémantique des critères (genre, pays, longueur, prix) exécutée côté serveur sans exposer aucun secret ni clé au lecteur.
+              <strong className="text-[#181826]">Recherche orale intelligente & sécurisée :</strong> transcription haute fidélité des toponymes et accents africains avec extraction sémantique des critères (genre, pays, longueur, prix) exécutée côté serveur sans exposer aucun secret ni clé au lecteur.
             </span>
           </li>
           <li className="flex items-start gap-2">

@@ -99,10 +99,10 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate, onBac
           </button>
         </div>
 
-        {/* À droite : Bibliothèque Vocale */}
+        {/* À droite : Bibliothèque Orale */}
         <div className="flex items-center">
           <span className="text-xs sm:text-sm font-bold text-[#1E2958] bg-[#E9EDF9] px-3 py-1 rounded-full border border-[#1E2958]/20 tracking-wide">
-            Bibliothèque Vocale
+            Bibliothèque Orale
           </span>
         </div>
       </div>

@@ -218,9 +218,18 @@ export const App: React.FC = () => {
       )}
 
       {/* Pied de page discret */}
-      <footer className="w-full bg-[#FBF8F3] border-t border-[#E6E0D6] py-3 text-center text-[10px] text-[#656575] font-medium">
+      <footer className="w-full bg-[#FBF8F3] border-t border-[#E6E0D6] py-3 text-center text-[11px] text-[#656575] font-medium">
         <div className="max-w-md mx-auto px-4">
-          <p>OraTama · Prototype d’expérimentation d'une Bibliothèque Africaine Orale</p>
+          <p>
+            Prototype d’expérimentation d'une Bibliothèque Africaine Orale ·{' '}
+            <button
+              type="button"
+              onClick={() => navigateTo({ name: 'about' })}
+              className="underline underline-offset-2 hover:text-[#1E2958] font-semibold cursor-pointer"
+            >
+              À propos
+            </button>
+          </p>
         </div>
       </footer>
     </div>

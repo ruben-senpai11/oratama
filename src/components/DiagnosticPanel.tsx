@@ -144,7 +144,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
           <span className="text-base" aria-hidden="true">🛠️</span>
           <div>
             <h2 id="diag-panel-title" className="font-bold text-xs tracking-wide">
-              Mode Diagnostic Vocal · OraTama
+              Mode Diagnostic Oral · OraTama
             </h2>
             <p className="text-[10px] text-white/80">
               Paramètre actif : <code className="bg-white/20 px-1 py-0.2 rounded font-mono">?debug=1</code>
@@ -423,7 +423,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
 
             {events.length === 0 ? (
               <p className="text-center py-6 text-xs text-[#656575] italic">
-                Aucun événement vocal capturé pour le moment. Activez le micro pour observer les déclenchements en temps réel.
+                Aucun événement oral capturé pour le moment. Activez le micro pour observer les déclenchements en temps réel.
               </p>
             ) : (
               <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
@@ -456,7 +456,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
       <div className="bg-[#FBF8F3] p-2.5 border-t border-[#E6E0D6] flex items-center justify-between text-[10px] text-[#656575]">
         <div className="flex items-center gap-1">
           <span>🔒</span>
-          <span>Données vocales sécurisées · Zéro tracking publicitaire</span>
+          <span>Données orales sécurisées · Zéro tracking publicitaire</span>
         </div>
         <button
           type="button"

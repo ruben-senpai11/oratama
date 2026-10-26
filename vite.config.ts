@@ -269,7 +269,7 @@ export default defineConfig(({ mode }) => {
         manifest: {
           name: 'OraTama',
           short_name: 'OraTama',
-          description: 'Concept vocal non officiel pour une bibliothèque africaine',
+          description: 'Prototype d’expérimentation d\'une Bibliothèque Africaine Orale',
           theme_color: '#1E2958',
           background_color: '#FBF8F3',
           display: 'standalone',
