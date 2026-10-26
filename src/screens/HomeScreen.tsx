@@ -616,14 +616,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
               aria-checked={speechEngine === 'gemini'}
               onClick={() => setSpeechEngine(speechEngine === 'gemini' ? 'webspeech' : 'gemini')}
               title={speechEngine === 'gemini' ? 'Moteur actif : Gemini IA (cliquez pour Web Speech)' : 'Moteur actif : Web Speech (cliquez pour Gemini IA)'}
-              className={`w-11 h-6 rounded-full transition-colors duration-200 relative p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E2958] cursor-pointer shadow-inner ${
-                speechEngine === 'gemini' ? 'bg-[#E09228]' : 'bg-[#1E2958]'
+              className={`w-11 h-6 rounded-full transition-all duration-200 relative p-[2px] box-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E2958] cursor-pointer shadow-xs ${
+                speechEngine === 'gemini'
+                  ? 'bg-[#E09228] border-2 border-[#E09228]'
+                  : 'bg-transparent border-2 border-[#1E2958]'
               }`}
             >
               {/* Curseur blanc */}
               <span
-                className={`block w-5 h-5 bg-white rounded-full transition-transform duration-200 shadow-md ${
-                  speechEngine === 'gemini' ? 'translate-x-5' : 'translate-x-0'
+                className={`block w-4 h-4 bg-white rounded-full transition-transform duration-200 shadow-md ${
+                  speechEngine === 'gemini'
+                    ? 'translate-x-5'
+                    : 'translate-x-0 border border-[#1E2958]/25'
                 }`}
               />
             </button>
