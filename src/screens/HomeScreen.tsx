@@ -2,16 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Book, ParsedQuery, ViewScreen } from '../types';
 import booksData from '../data/books.json';
 import { BookCover } from '../components/BookCover';
-import {
-  isSpeechRecognitionSupported,
-  SpeechRecognitionService,
-  requestMicrophonePermission,
-} from '../utils/speechRecognition';
-import {
-  FreeAudioRecorder,
-  processAudioWithBackend,
-} from '../utils/geminiAudioService';
-import { normalizeText, parseQuery } from '../utils/queryParser';
+import { AudioRecorderService } from '../utils/audioRecorder';
+import { processAudioWithBackend } from '../utils/geminiAudioService';
+import { requestMicrophonePermission } from '../utils/speechRecognition';
+import { normalizeText } from '../utils/queryParser';
 import { ConsentModal } from '../components/ConsentModal';
 
 interface HomeScreenProps {
@@ -46,18 +40,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // Services vocaux
-  const recognitionServiceRef = useRef<SpeechRecognitionService | null>(null);
-  const audioRecorderRef = useRef<FreeAudioRecorder | null>(null);
-  const liveTranscriptRef = useRef<string>('');
+  // Enregistreur audio identique à la page Auteur (éprouvé et fonctionnel)
+  const recorderRef = useRef<AudioRecorderService | null>(null);
 
   useEffect(() => {
-    recognitionServiceRef.current = new SpeechRecognitionService();
-    audioRecorderRef.current = new FreeAudioRecorder();
+    recorderRef.current = new AudioRecorderService();
 
     return () => {
-      recognitionServiceRef.current?.stop();
-      audioRecorderRef.current?.cancel();
+      recorderRef.current?.cancelRecording();
     };
   }, []);
 
@@ -84,137 +74,126 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
 
   const startActiveListening = async () => {
     setLiveTranscript('');
-    liveTranscriptRef.current = '';
     setErrorInfo(null);
     setElapsedSeconds(0);
 
-    // 1. Démarrer l'enregistreur continu MediaRecorder (haute fidélité pour le backend)
-    let recorderStarted = false;
-    if (
-      audioRecorderRef.current &&
-      typeof navigator !== 'undefined' &&
-      typeof navigator.mediaDevices?.getUserMedia === 'function'
-    ) {
-      recorderStarted = await audioRecorderRef.current.start((sec) => {
-        setElapsedSeconds(sec);
-      });
-    }
+    if (!recorderRef.current) return;
 
-    // 2. Démarrer en parallèle Web Speech API si supporté (pour affichage temps réel & repli transparent)
-    if (isSpeechRecognitionSupported() && recognitionServiceRef.current) {
-      try {
-        void recognitionServiceRef.current.start({
-          onStart: () => {},
-          onInterimResult: (transcript) => {
-            setLiveTranscript(transcript);
-            liveTranscriptRef.current = transcript;
-          },
-          onFinalResult: (transcript) => {
-            setLiveTranscript(transcript);
-            liveTranscriptRef.current = transcript;
-          },
-          onError: () => {
-            // Ignoré si le MediaRecorder enregistre déjà en parallèle
-          },
-          onEnd: () => {},
+    setStatusMessage('Activation du microphone…');
+
+    const started = await recorderRef.current.startRecording({
+      maxDurationSeconds: 180, // Jusqu'à 3 minutes libres sans contrainte de temps
+      onTimeUpdate: (elapsed) => {
+        setElapsedSeconds(elapsed);
+      },
+      onComplete: async (blob, mime) => {
+        await handleAudioRecorded(blob, mime);
+      },
+      onError: (err) => {
+        setMicState('erreur');
+        setErrorInfo({
+          type: 'permission',
+          message: err || 'Impossible d’accéder au micro. Veuillez autoriser le microphone.',
         });
-      } catch {
-        // ignore
-      }
-    }
+        setStatusMessage(null);
+      },
+    });
 
-    if (recorderStarted) {
+    if (started) {
       setMicState('ecoute');
       setStatusMessage('Je vous écoute… Décrivez votre livre sans limite de temps.');
-      return;
-    }
-
-    // Si MediaRecorder n'a pas pu démarrer
-    if (!isSpeechRecognitionSupported()) {
+    } else {
       setMicState('erreur');
-      setErrorInfo({
-        type: 'permission',
-        message: 'Impossible d’accéder au microphone. Veuillez autoriser l’accès au micro dans votre navigateur.',
-      });
+      if (!errorInfo) {
+        setErrorInfo({
+          type: 'permission',
+          message: 'Impossible de démarrer l’enregistrement audio.',
+        });
+      }
     }
   };
 
-  // Arrêt volontaire de l'enregistrement par l'utilisateur
-  const handleStopListening = async () => {
-    // Arrêter le service Web Speech
-    try {
-      recognitionServiceRef.current?.stop();
-    } catch {
-      // ignore
+  // Arrêt volontaire par l'utilisateur
+  const handleStopListening = () => {
+    setMicState('analyse');
+    setStatusMessage('Compréhension de votre demande par l’IA…');
+    if (recorderRef.current?.isRecording()) {
+      recorderRef.current.stopRecording();
     }
+  };
 
-    // Si MediaRecorder enregistrait
-    if (audioRecorderRef.current?.isRecording) {
-      setMicState('analyse');
-      setStatusMessage('Analyse et compréhension de votre demande vocale…');
+  // Traitement audio une fois l'enregistrement finalisé
+  const handleAudioRecorded = async (blob: Blob, _mime: string) => {
+    setMicState('analyse');
+    setStatusMessage('Compréhension de votre demande par l’IA…');
 
-      let audioBlob: Blob | null = null;
-      try {
-        audioBlob = await audioRecorderRef.current.stop();
-      } catch (e) {
-        console.warn('Erreur lors de l’arrêt du recorder:', e);
-      }
-
-      // 1. Tenter la compréhension sémantique via le backend Gemini
-      if (audioBlob && audioBlob.size > 1000) {
-        try {
-          const result = await processAudioWithBackend(audioBlob);
-
-          if (result && result.transcript && result.transcript.trim()) {
-            setLiveTranscript(result.transcript);
-            setTextInput(result.transcript);
-            setMicState('inactif');
-            setStatusMessage(`Compris : « ${result.transcript} »`);
-
-            const parsedOverride: ParsedQuery = {
-              raw: result.transcript,
-              normalized: normalizeText(result.transcript),
-              genre: (result.genre as any) || undefined,
-              longueur: (result.longueur as any) || undefined,
-              pays: result.pays || undefined,
-              themes: result.themes || [],
-              maxPrixFcfa: result.maxPrixFcfa || undefined,
-              isUnderstood: true,
-            };
-
-            onSearch(result.transcript, parsedOverride);
-            return;
-          }
-        } catch (backendError) {
-          console.warn('Backend vocal indisponible, bascule sur la reconnaissance locale:', backendError);
-        }
-      }
-
-      // 2. REPLI TRANSPARENT : Si le backend n'a pas répondu, utiliser le texte capturé localement
-      const localText = (liveTranscriptRef.current || liveTranscript || '').trim();
-      if (localText) {
-        setLiveTranscript(localText);
-        setTextInput(localText);
-        setMicState('inactif');
-        setStatusMessage(`Compris : « ${localText} »`);
-        onSearch(localText, parseQuery(localText));
-        return;
-      }
-
-      // 3. Si aucun mot n'a été perçu (silence prolongé ou micro muet)
-      setMicState('inactif');
-      setStatusMessage('Aucune parole claire détectée. Touchez le micro et parlez distinctement.');
+    if (!blob || blob.size < 100) {
+      setMicState('erreur');
+      setErrorInfo({
+        type: 'no-speech',
+        message: 'L’enregistrement était trop court ou silencieux. Touchez le bouton pour réessayer en parlant près de votre microphone.',
+      });
+      setStatusMessage('Enregistrement trop court. Touchez « Réessayer » pour recommencer.');
       return;
     }
 
-    // Si arrêt Web Speech pur
-    const localText = (liveTranscriptRef.current || liveTranscript || '').trim();
-    if (localText) {
-      setMicState('inactif');
-      onSearch(localText, parseQuery(localText));
-    } else {
-      setMicState('inactif');
-      setStatusMessage(null);
+    try {
+      const result = await processAudioWithBackend(blob);
+      console.log('[HomeScreen] Résultat IA Gemini :', result);
+
+      const extractedQuery = (
+        result.transcript ||
+        result.searchTerms ||
+        [result.genre, result.pays].filter(Boolean).join(' ') ||
+        ''
+      ).trim();
+
+      if (extractedQuery) {
+        setLiveTranscript(extractedQuery);
+        setTextInput(extractedQuery);
+        setMicState('inactif');
+        setStatusMessage(`Compris : « ${extractedQuery} »`);
+
+        const parsedOverride: ParsedQuery = {
+          raw: extractedQuery,
+          normalized: normalizeText(extractedQuery),
+          genre: (result.genre as any) || undefined,
+          longueur: (result.longueur as any) || undefined,
+          pays: result.pays || undefined,
+          themes: result.themes || [],
+          maxPrixFcfa: result.maxPrixFcfa || undefined,
+          isUnderstood: true,
+        };
+
+        onSearch(extractedQuery, parsedOverride);
+        return;
+      }
+
+      // Si des filtres ont été reconnus même sans transcription textuelle explicite
+      if (result.genre || result.pays || (result.themes && result.themes.length > 0)) {
+        const fallbackText = [result.genre, result.pays, ...(result.themes || [])].filter(Boolean).join(' ');
+        setLiveTranscript(fallbackText);
+        setTextInput(fallbackText);
+        setMicState('inactif');
+        onSearch(fallbackText);
+        return;
+      }
+
+      // Silence ou voix inaudible : ne pas réinitialiser silencieusement, informer l'utilisateur avec bouton Réessayer
+      setMicState('erreur');
+      setErrorInfo({
+        type: 'no-speech',
+        message: 'Aucune parole claire n’a pu être comprise dans votre enregistrement. Vérifiez que votre microphone est activé et parlez distinctement.',
+      });
+      setStatusMessage('Aucune parole détectée. Touchez « Réessayer » pour recommencer ou tapez au clavier ci-dessous.');
+    } catch (err: any) {
+      console.error('[HomeScreen] Échec du traitement audio :', err);
+      setMicState('erreur');
+      setErrorInfo({
+        type: 'server',
+        message: err?.message || 'Le serveur vocal n’a pas pu traiter l’audio. Touchez « Réessayer » ou tapez votre recherche ci-dessous.',
+      });
+      setStatusMessage('Erreur de traitement. Touchez « Réessayer » ou tapez au clavier ci-dessous.');
     }
   };
 
@@ -253,45 +232,45 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
     <div className="flex-1 flex flex-col justify-between max-w-md mx-auto w-full px-4 py-6">
       {/* En-tête de page */}
       <div className="text-center mt-1 mb-4">
-        <h1 className="text-2xl sm:text-3xl font-black text-[#1B1B2A] tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-black text-[#181826] tracking-tight">
           Demandez un livre à voix haute
         </h1>
-        <p className="text-xs sm:text-sm text-[#6B6B7A] mt-2 leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#656575] mt-2 leading-relaxed">
           Décrivez librement ce que vous cherchez : genre, pays, thème ou budget. OraTama sélectionne les titres adaptés.
         </p>
       </div>
 
       {/* Zone centrale du Micro */}
       <div className="flex flex-col items-center justify-center my-3 space-y-4">
-        {/* Badge d'état du micro : Mot ET icône */}
+        {/* Badge d'état du micro */}
         <div
           role="status"
           aria-live="polite"
           className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-colors ${
             micState === 'ecoute'
-              ? 'bg-[#FDF3E3] text-[#1B1B2A] border-[#E9A23B]'
+              ? 'bg-[#FDF4E7] text-[#181826] border-[#E09228]'
               : micState === 'analyse'
-              ? 'bg-[#EEF2FF] text-[#1F2A5C] border-[#1F2A5C]/40'
+              ? 'bg-[#E9EDF9] text-[#1E2958] border-[#1E2958]/40'
               : micState === 'erreur'
               ? 'bg-[#FDF0ED] text-[#B3261E] border-[#B3261E]'
-              : 'bg-white text-[#6B6B7A] border-[#E8E3DA]'
+              : 'bg-white text-[#656575] border-[#E6E0D6]'
           }`}
         >
           {micState === 'ecoute' && (
             <>
-              <span className="w-2.5 h-2.5 rounded-full bg-[#E9A23B] animate-ping" aria-hidden="true" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#E09228] animate-ping" aria-hidden="true" />
               <span>Micro actif · Durée : {formatSeconds(elapsedSeconds)}</span>
             </>
           )}
           {micState === 'analyse' && (
             <>
-              <span className="w-3 h-3 border-2 border-[#1F2A5C] border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+              <span className="w-3 h-3 border-2 border-[#1E2958] border-t-transparent rounded-full animate-spin" aria-hidden="true" />
               <span>Compréhension de votre demande…</span>
             </>
           )}
           {micState === 'inactif' && (
             <>
-              <span className="w-2.5 h-2.5 rounded-full bg-[#1F2A5C]" aria-hidden="true" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#1E2958]" aria-hidden="true" />
               <span>Micro prêt · Touchez pour parler</span>
             </>
           )}
@@ -303,11 +282,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
           )}
         </div>
 
-        {/* Bouton Micro grand format (au moins 80px) */}
+        {/* Bouton Micro grand format */}
         <div className="relative flex items-center justify-center">
           {micState === 'ecoute' && (
             <div
-              className="absolute w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#E9A23B]/30 animate-ping pointer-events-none"
+              className="absolute w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#E09228]/30 animate-ping pointer-events-none"
               aria-hidden="true"
             />
           )}
@@ -322,14 +301,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
                 : 'Démarrer la recherche vocale'
             }
             aria-pressed={micState === 'ecoute'}
-            className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center transition-all shadow-lg active:scale-95 focus-visible:ring-4 focus-visible:ring-[#1F2A5C]/40 ${
+            className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center transition-all shadow-lg active:scale-95 focus-visible:ring-4 focus-visible:ring-[#1E2958]/40 ${
               micState === 'ecoute'
-                ? 'bg-[#E9A23B] text-[#1B1B2A] ring-4 ring-[#E9A23B]/50 animate-mic-pulse border-2 border-[#1F2A5C]'
+                ? 'bg-[#E09228] text-[#181826] ring-4 ring-[#E09228]/50 animate-mic-pulse border-2 border-[#1E2958]'
                 : micState === 'analyse'
-                ? 'bg-[#1F2A5C]/80 text-white cursor-wait'
+                ? 'bg-[#1E2958]/80 text-white cursor-wait'
                 : micState === 'erreur'
                 ? 'bg-[#B3261E] text-white hover:bg-[#8F1E18]'
-                : 'bg-[#1F2A5C] hover:bg-[#161E42] text-white'
+                : 'bg-[#1E2958] hover:bg-[#141C3E] text-white'
             }`}
           >
             {micState === 'ecoute' ? (
@@ -385,7 +364,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
           </button>
         </div>
 
-        <p className="text-xs font-semibold text-[#6B6B7A]">
+        <p className="text-xs font-semibold text-[#656575]">
           {micState === 'ecoute'
             ? 'Prenez tout votre temps · Touchez « Terminer » quand vous avez fini'
             : micState === 'analyse'
@@ -400,18 +379,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
           role="region"
           aria-live="polite"
           aria-atomic="true"
-          className="w-full min-h-[52px] p-3 rounded-xl bg-white border border-[#E8E3DA] text-center flex flex-col justify-center shadow-sm"
+          className="w-full min-h-[52px] p-3 rounded-xl bg-white border border-[#E6E0D6] text-center flex flex-col justify-center shadow-sm"
         >
           {liveTranscript ? (
-            <p className="text-sm font-semibold text-[#1B1B2A] italic">
+            <p className="text-sm font-semibold text-[#181826] italic">
               « {liveTranscript} »
             </p>
           ) : statusMessage ? (
-            <p className="text-xs font-medium text-[#1F2A5C] animate-pulse">
+            <p className="text-xs font-medium text-[#1E2958] animate-pulse">
               {statusMessage}
             </p>
           ) : (
-            <p className="text-xs text-[#6B6B7A]">
+            <p className="text-xs text-[#656575]">
               Votre voix sera transcrite ici dès que vous parlez…
             </p>
           )}
@@ -427,7 +406,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
               <span>⚠️</span>
               <span>{errorInfo.type === 'permission' ? 'Accès microphone requis :' : 'Information vocale :'}</span>
             </p>
-            <p className="text-[#1B1B2A]">{errorInfo.message}</p>
+            <p className="text-[#181826]">{errorInfo.message}</p>
 
             <div className="pt-2 border-t border-[#B3261E]/20 flex flex-wrap items-center gap-2">
               {errorInfo.type === 'permission' ? (
@@ -448,7 +427,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
                       });
                     }
                   }}
-                  className="min-h-[38px] px-3.5 py-1.5 bg-[#1F2A5C] text-white text-[11px] font-bold rounded-lg hover:bg-[#161E42] transition-colors shadow-sm"
+                  className="min-h-[38px] px-3.5 py-1.5 bg-[#1E2958] text-white text-[11px] font-bold rounded-lg hover:bg-[#141C3E] transition-colors shadow-sm"
                 >
                   Autoriser le micro
                 </button>
@@ -459,7 +438,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
                     setErrorInfo(null);
                     void startActiveListening();
                   }}
-                  className="min-h-[38px] px-3.5 py-1.5 bg-[#1F2A5C] text-white text-[11px] font-bold rounded-lg hover:bg-[#161E42] transition-colors shadow-sm"
+                  className="min-h-[38px] px-3.5 py-1.5 bg-[#1E2958] text-white text-[11px] font-bold rounded-lg hover:bg-[#141C3E] transition-colors shadow-sm"
                 >
                   Réessayer
                 </button>
@@ -472,7 +451,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
       {/* Alternative : Saisie textuelle toujours accessible */}
       <div className="mt-2 mb-4">
         <form onSubmit={handleTextSubmit} className="space-y-2">
-          <label htmlFor="search-input" className="block text-xs font-semibold text-[#6B6B7A]">
+          <label htmlFor="search-input" className="block text-xs font-semibold text-[#656575]">
             Ou tapez votre recherche au clavier :
           </label>
           <div className="flex gap-2">
@@ -482,11 +461,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               placeholder="Ex: Un roman d'amour béninois…"
-              className="flex-1 min-h-[44px] px-3.5 py-2 text-sm bg-white border border-[#E8E3DA] rounded-xl text-[#1B1B2A] placeholder-[#6B6B7A] focus:border-[#1F2A5C] focus:ring-1 focus:ring-[#1F2A5C]"
+              className="flex-1 min-h-[44px] px-3.5 py-2 text-sm bg-white border border-[#E6E0D6] rounded-xl text-[#181826] placeholder-[#656575] focus:border-[#1E2958] focus:ring-1 focus:ring-[#1E2958]"
             />
             <button
               type="submit"
-              className="min-h-[44px] px-5 py-2 bg-[#1F2A5C] hover:bg-[#161E42] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+              className="min-h-[44px] px-5 py-2 bg-[#1E2958] hover:bg-[#141C3E] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
             >
               Trouver
             </button>
@@ -495,8 +474,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
       </div>
 
       {/* 4 Exemples cliquables */}
-      <div className="pt-3 border-t border-[#E8E3DA]">
-        <p className="text-xs font-semibold text-[#6B6B7A] mb-2">
+      <div className="pt-3 border-t border-[#E6E0D6]">
+        <p className="text-xs font-semibold text-[#656575] mb-2">
           Exemples de demandes vocales à tester :
         </p>
         <div className="flex flex-col gap-2">
@@ -505,10 +484,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
               key={idx}
               type="button"
               onClick={() => handleExampleClick(example)}
-              className="w-full min-h-[44px] text-left text-xs sm:text-sm p-3 rounded-xl bg-white hover:bg-[#E8ECFA]/50 border border-[#E8E3DA] text-[#1B1B2A] font-medium transition-colors flex items-center justify-between group shadow-sm"
+              className="w-full min-h-[44px] text-left text-xs sm:text-sm p-3 rounded-xl bg-white hover:bg-[#E9EDF9]/50 border border-[#E6E0D6] text-[#181826] font-medium transition-colors flex items-center justify-between group shadow-sm"
             >
               <span className="line-clamp-1">« {example} »</span>
-              <span className="text-[#1F2A5C] text-xs font-bold shrink-0 ml-2 group-hover:translate-x-0.5 transition-transform" aria-hidden="true">
+              <span className="text-[#1E2958] text-xs font-bold shrink-0 ml-2 group-hover:translate-x-0.5 transition-transform" aria-hidden="true">
                 →
               </span>
             </button>
@@ -517,15 +496,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
       </div>
 
       {/* Sélection découverte du catalogue */}
-      <div className="mt-6 pt-5 border-t border-[#E8E3DA] space-y-3">
+      <div className="mt-6 pt-5 border-t border-[#E6E0D6] space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#6B6B7A]">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#656575]">
             Ou découvrez une sélection du catalogue
           </h2>
           <button
             type="button"
             onClick={() => onSearch('')}
-            className="text-xs text-[#1F2A5C] hover:underline font-semibold"
+            className="text-xs text-[#1E2958] hover:underline font-semibold"
           >
             Tout voir →
           </button>
@@ -536,24 +515,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
               key={book.id}
               type="button"
               onClick={() => onNavigate({ name: 'book', bookId: book.id })}
-              className="w-full min-h-[48px] p-2.5 rounded-xl bg-white hover:bg-[#E8ECFA]/40 border border-[#E8E3DA] text-left transition-all flex items-center gap-3 shadow-sm group"
+              className="w-full min-h-[48px] p-2.5 rounded-xl bg-white hover:bg-[#E9EDF9]/40 border border-[#E6E0D6] text-left transition-all flex items-center gap-3 shadow-sm group"
             >
               <BookCover book={book} size="sm" className="shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#1F2A5C] bg-[#E8ECFA] px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#1E2958] bg-[#E9EDF9] px-1.5 py-0.5 rounded">
                     {book.genre}
                   </span>
-                  <span className="text-[11px] text-[#6B6B7A] truncate">{book.pays}</span>
+                  <span className="text-[11px] text-[#656575] truncate">{book.pays}</span>
                 </div>
-                <p className="font-bold text-xs text-[#1B1B2A] truncate mt-0.5 group-hover:text-[#1F2A5C]">
+                <p className="font-bold text-xs text-[#181826] truncate mt-0.5 group-hover:text-[#1E2958]">
                   {book.titre}
                 </p>
-                <p className="text-[11px] text-[#6B6B7A] truncate">
+                <p className="text-[11px] text-[#656575] truncate">
                   {book.auteur} · {book.prixFcfa.toLocaleString('fr-FR')} FCFA
                 </p>
               </div>
-              <span className="text-[#1F2A5C] text-sm font-bold group-hover:translate-x-1 transition-transform pr-1" aria-hidden="true">
+              <span className="text-[#1E2958] text-sm font-bold group-hover:translate-x-1 transition-transform pr-1" aria-hidden="true">
                 →
               </span>
             </button>

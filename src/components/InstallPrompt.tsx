@@ -77,25 +77,25 @@ export const InstallPrompt: React.FC = () => {
     <aside
       role="region"
       aria-labelledby="install-title"
-      className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto bg-white rounded-2xl shadow-2xl border-2 border-[#1F2A5C] p-4 text-[#1B1B2A] animate-in fade-in slide-in-from-bottom duration-300"
+      className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto bg-white rounded-2xl shadow-2xl border-2 border-[#1E2958] p-4 text-[#181826] animate-in fade-in slide-in-from-bottom duration-300"
     >
       <div className="flex items-start gap-3">
         {/* Miniature de l'icône de l'application */}
-        <div className="w-12 h-12 rounded-xl bg-[#1F2A5C] flex-shrink-0 flex items-center justify-center text-[#FBF8F3] font-black text-sm tracking-wide shadow-sm border border-[#E9A23B]/40">
+        <div className="w-12 h-12 rounded-xl bg-[#1E2958] flex-shrink-0 flex items-center justify-center text-[#FBF8F3] font-black text-sm tracking-wide shadow-sm border border-[#E09228]/40">
           OT
         </div>
 
         <div className="flex-1 min-w-0 pr-6">
-          <h2 id="install-title" className="text-sm font-bold text-[#1F2A5C] leading-snug">
+          <h2 id="install-title" className="text-sm font-bold text-[#1E2958] leading-snug">
             Installer l'application OraTama
           </h2>
-          <p className="text-xs text-[#6B6B7A] mt-1 leading-relaxed">
+          <p className="text-xs text-[#656575] mt-1 leading-relaxed">
             Installez l’application sur votre appareil pour y accéder directement depuis votre écran d’accueil, rapidement et même hors connexion.
           </p>
 
           {showManualGuide && (
-            <div className="mt-2.5 p-2.5 rounded-lg bg-[#FDF3E3] border border-[#E9A23B] text-[11px] text-[#1B1B2A] leading-relaxed">
-              <strong className="block text-[#1F2A5C] mb-0.5">Pour ajouter à l'écran d'accueil :</strong>
+            <div className="mt-2.5 p-2.5 rounded-lg bg-[#FDF4E7] border border-[#E09228] text-[11px] text-[#181826] leading-relaxed">
+              <strong className="block text-[#1E2958] mb-0.5">Pour ajouter à l'écran d'accueil :</strong>
               Dans le menu de votre navigateur (ou l'icône Partager sur iPhone), choisissez <strong>« Ajouter à l'écran d'accueil »</strong> ou <strong>« Installer l'application »</strong>.
             </div>
           )}
@@ -104,7 +104,7 @@ export const InstallPrompt: React.FC = () => {
             <button
               type="button"
               onClick={handleInstallClick}
-              className="min-h-[44px] px-4 py-2 bg-[#1F2A5C] text-white text-xs font-bold rounded-xl hover:bg-[#161E42] active:scale-95 transition-all shadow-sm flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#1F2A5C] focus:ring-offset-2"
+              className="min-h-[44px] px-4 py-2 bg-[#1E2958] text-white text-xs font-bold rounded-xl hover:bg-[#141C3E] active:scale-95 transition-all shadow-sm flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#1E2958] focus:ring-offset-2"
             >
               <span>📲</span>
               <span>Installer l'application</span>
@@ -113,7 +113,7 @@ export const InstallPrompt: React.FC = () => {
             <button
               type="button"
               onClick={handleDismiss}
-              className="min-h-[44px] px-3 py-2 text-xs font-medium text-[#6B6B7A] hover:text-[#1B1B2A] hover:bg-black/5 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#6B6B7A]"
+              className="min-h-[44px] px-3 py-2 text-xs font-medium text-[#656575] hover:text-[#181826] hover:bg-black/5 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#656575]"
             >
               Plus tard
             </button>
@@ -125,7 +125,7 @@ export const InstallPrompt: React.FC = () => {
           type="button"
           onClick={handleDismiss}
           aria-label="Fermer la proposition d'installation"
-          className="absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center text-[#6B6B7A] hover:text-[#1B1B2A] rounded-full hover:bg-black/5 text-lg font-bold"
+          className="absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center text-[#656575] hover:text-[#181826] rounded-full hover:bg-black/5 text-lg font-bold"
         >
           ×
         </button>

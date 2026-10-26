@@ -5,23 +5,23 @@ export default {
     extend: {
       colors: {
         ora: {
-          // Palette officielle OraTama
-          primary: '#1F2A5C', // Indigo primaire
-          primaryDark: '#161E42',
-          primaryLight: '#2D3B78',
-          primarySoft: '#E8ECFA',
-          voice: '#E9A23B', // Accent voix ocre (jamais en texte sur fond clair)
-          voiceDark: '#C9821F',
-          voiceSoft: '#FDF3E3',
-          bg: '#FBF8F3', // Fond crème
+          // Palette 1 : Terre & Indigo Sahel
+          primary: '#1E2958', // Indigo profond sahélien
+          primaryDark: '#141C3E',
+          primaryLight: '#2C3A7A',
+          primarySoft: '#E9EDF9',
+          voice: '#E09228', // Ocre terre chaude
+          voiceDark: '#C27B1A',
+          voiceSoft: '#FDF4E7',
+          bg: '#FBF8F3', // Fond crème sable chaud
           bgCard: '#FFFFFF',
-          text: '#1B1B2A', // Texte principal
-          textSecondary: '#6B6B7A', // Texte secondaire
+          text: '#181826', // Noir d'encre doux
+          textSecondary: '#656575', // Gris chaud
           highlight: '#FCE9C4', // Surlignage de la phrase lue
           error: '#B3261E', // Erreur
           errorSoft: '#FDF0ED',
-          border: '#E8E3DA',
-          borderStrong: '#D0C9BD',
+          border: '#E6E0D6',
+          borderStrong: '#CDC6B9',
         },
       },
       fontFamily: {

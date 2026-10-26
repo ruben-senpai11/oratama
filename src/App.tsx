@@ -154,7 +154,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1B1B2A] font-sans antialiased">
+    <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#181826] font-sans antialiased">
       {/* En-tête et navigation légère */}
       <Header currentScreen={currentScreen} onNavigate={navigateTo} onBack={handleBack} />
 
@@ -164,8 +164,8 @@ export const App: React.FC = () => {
           fallback={
             <div className="flex-1 flex items-center justify-center p-8 text-center" aria-live="polite">
               <div className="space-y-3">
-                <div className="w-8 h-8 rounded-full border-2 border-[#1F2A5C] border-t-transparent animate-spin mx-auto" />
-                <p className="text-xs text-[#6B6B7A] font-medium">Chargement d’OraTama…</p>
+                <div className="w-8 h-8 rounded-full border-2 border-[#1E2958] border-t-transparent animate-spin mx-auto" />
+                <p className="text-xs text-[#656575] font-medium">Chargement d’OraTama…</p>
               </div>
             </div>
           }
@@ -218,7 +218,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Pied de page discret */}
-      <footer className="w-full bg-[#FBF8F3] border-t border-[#E8E3DA] py-3 text-center text-[10px] text-[#6B6B7A] font-medium">
+      <footer className="w-full bg-[#FBF8F3] border-t border-[#E6E0D6] py-3 text-center text-[10px] text-[#656575] font-medium">
         <div className="max-w-md mx-auto px-4">
           <p>OraTama · Prototype d’expérimentation d'une Bibliothèque Africaine Orale</p>
         </div>

@@ -58,11 +58,13 @@ function voiceSearchApiPlugin(apiKey: string, defaultModel = 'gemini-3.5-flash-l
             return;
           }
 
+          console.log(`[API /api/voice-search] Requête reçue : ${audioBase64.length} caractères base64, mime: ${mimeType}`);
+
           const prompt = `Tu es l'assistant vocal intelligent d'OraTama, la bibliothèque africaine orale.
 Écoute attentivement cet enregistrement audio en français (qui peut comporter des accents ouest-africains, des noms de villes ou pays d'Afrique comme Cotonou, Porto-Novo, Ganvié, Abidjan, Dakar, Lomé, Bamako, etc., des titres de livres, des genres littéraires ou des termes en langues locales comme le fon, yoruba, wolof).
 
 Mission :
-1. Transcris fidèlement la totalité des propos de l'utilisateur.
+1. Transcris fidèlement la totalité des propos de l'utilisateur dans le champ "transcript". Même si l'enregistrement est court ou comporte du bruit ambiant, fais de ton mieux pour transcrire les paroles prononcées.
 2. Analyse sa demande pour en extraire les critères de recherche littéraire dans la bibliothèque OraTama.
 
 Réponds STRICTEMENT avec un objet JSON valide respectant cette structure :
@@ -76,7 +78,7 @@ Réponds STRICTEMENT avec un objet JSON valide respectant cette structure :
   "maxPrixFcfa": nombre ou null
 }
 
-IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte avant ou après.`;
+IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte avant ou après. Ne laisse "transcript" vide que si l'audio est un silence absolu.`;
 
           let lastErrorMessage = '';
           let extractedData: any = null;
@@ -108,12 +110,13 @@ IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte a
                     responseMimeType: 'application/json',
                   },
                 }),
-                signal: AbortSignal.timeout(10000),
+                signal: AbortSignal.timeout(12000),
               });
 
               if (!geminiRes.ok) {
                 const errData = await geminiRes.json().catch(() => null);
                 lastErrorMessage = errData?.error?.message || `Erreur Gemini (${geminiRes.status})`;
+                console.warn(`[API /api/voice-search] Modèle ${modelToTry} en échec (${geminiRes.status}): ${lastErrorMessage}`);
                 continue;
               }
 
@@ -126,13 +129,16 @@ IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte a
 
               const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
               extractedData = JSON.parse(cleaned);
+              console.log(`[API /api/voice-search] Succès avec ${modelToTry}:`, extractedData);
               break; // Succès !
             } catch (modelErr: any) {
               lastErrorMessage = modelErr?.message || 'Erreur réseau vers Gemini';
+              console.warn(`[API /api/voice-search] Exception sur ${modelToTry}:`, modelErr?.message);
             }
           }
 
           if (!extractedData) {
+            console.error(`[API /api/voice-search] Échec sur tous les modèles : ${lastErrorMessage}`);
             res.statusCode = 502;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ error: lastErrorMessage || 'Échec de transcription avec l’ensemble des modèles IA.' }));
@@ -156,6 +162,7 @@ IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte a
             })
           );
         } catch (err: any) {
+          console.error('[API /api/voice-search] Erreur serveur interne:', err);
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: err?.message || 'Erreur serveur lors du traitement audio.' }));
@@ -200,7 +207,7 @@ export default defineConfig(({ mode }) => {
           name: 'OraTama',
           short_name: 'OraTama',
           description: 'Concept vocal non officiel pour une bibliothèque africaine',
-          theme_color: '#1F2A5C',
+          theme_color: '#1E2958',
           background_color: '#FBF8F3',
           display: 'standalone',
           orientation: 'portrait',

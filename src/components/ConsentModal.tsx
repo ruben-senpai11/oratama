@@ -17,8 +17,8 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({ isOpen, onAccept, on
       aria-describedby="consent-desc"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
     >
-      <div className="w-full max-w-sm bg-[#FBF8F3] rounded-2xl p-6 shadow-2xl border border-[#E8E3DA] text-[#1B1B2A] animate-in fade-in zoom-in-95">
-        <div className="w-12 h-12 rounded-full bg-[#E8ECFA] text-[#1F2A5C] flex items-center justify-center mb-4 mx-auto">
+      <div className="w-full max-w-sm bg-[#FBF8F3] rounded-2xl p-6 shadow-2xl border border-[#E6E0D6] text-[#181826] animate-in fade-in zoom-in-95">
+        <div className="w-12 h-12 rounded-full bg-[#E9EDF9] text-[#1E2958] flex items-center justify-center mb-4 mx-auto">
           <svg
             className="w-6 h-6"
             fill="none"
@@ -35,16 +35,16 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({ isOpen, onAccept, on
           </svg>
         </div>
 
-        <h2 id="consent-title" className="text-lg font-bold text-center text-[#1B1B2A] mb-2">
+        <h2 id="consent-title" className="text-lg font-bold text-center text-[#181826] mb-2">
           Utilisation du microphone
         </h2>
 
-        <div id="consent-desc" className="text-sm text-[#6B6B7A] space-y-3 leading-relaxed mb-6">
+        <div id="consent-desc" className="text-sm text-[#656575] space-y-3 leading-relaxed mb-6">
           <p>
-            Pour comprendre votre demande à voix haute, votre navigateur utilise son service de reconnaissance vocale (pouvant traiter l’audio auprès de son fournisseur habituel).
+            Pour comprendre votre demande à voix haute, OraTama traite l'enregistrement audio de façon sécurisée afin d'en extraire les critères de recherche.
           </p>
-          <div className="p-3 bg-white rounded-lg border border-[#E8E3DA] text-xs font-medium text-[#1B1B2A]">
-            🛡️ <strong className="font-semibold">Engagement OraTama :</strong> notre application n’enregistre aucun appel réseau externe, ne collecte aucune donnée et n’envoie aucune voix sur un serveur tiers.
+          <div className="p-3 bg-white rounded-lg border border-[#E6E0D6] text-xs font-medium text-[#181826]">
+            🛡️ <strong className="font-semibold">Engagement OraTama :</strong> aucune donnée personnelle n'est stockée et vos enregistrements ne sont jamais partagés à des tiers.
           </div>
         </div>
 
@@ -52,14 +52,14 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({ isOpen, onAccept, on
           <button
             type="button"
             onClick={onAccept}
-            className="w-full min-h-[44px] px-4 py-3 bg-[#1F2A5C] hover:bg-[#161E42] text-white font-semibold rounded-xl transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-[#1F2A5C] focus-visible:ring-offset-2"
+            className="w-full min-h-[44px] px-4 py-3 bg-[#1E2958] hover:bg-[#141C3E] text-white font-semibold rounded-xl transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-[#1E2958] focus-visible:ring-offset-2"
           >
             Autoriser et continuer
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="w-full min-h-[44px] px-4 py-3 bg-transparent hover:bg-[#EFEAE1] text-[#6B6B7A] font-medium rounded-xl transition-colors border border-[#E8E3DA]"
+            className="w-full min-h-[44px] px-4 py-3 bg-transparent hover:bg-[#EFEAE1] text-[#656575] font-medium rounded-xl transition-colors border border-[#E6E0D6]"
           >
             Continuer avec le clavier
           </button>

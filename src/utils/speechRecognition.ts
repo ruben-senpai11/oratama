@@ -259,17 +259,25 @@ export class SpeechRecognitionService {
       return false;
     }
 
-    // 1. Débloquer et tester le micro matériel via getUserMedia
-    // Permet d'afficher la demande de permission native du navigateur (ex: Brave)
+    // 1. Vérifier la permission micro matériel sans couper les pistes actives
     try {
-      if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((track) => track.stop());
-        dispatchDiagnosticEvent({
-          type: 'mic-permission',
-          code: 'granted',
-          message: 'Micro matériel prêt et autorisé.',
-        });
+      if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
+        const status = await navigator.permissions.query({ name: 'microphone' as PermissionName }).catch(() => null);
+        if (status?.state === 'granted') {
+          dispatchDiagnosticEvent({
+            type: 'mic-permission',
+            code: 'granted',
+            message: 'Micro matériel prêt et autorisé.',
+          });
+        } else if (navigator.mediaDevices?.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach((track) => track.stop());
+          dispatchDiagnosticEvent({
+            type: 'mic-permission',
+            code: 'granted',
+            message: 'Micro matériel autorisé.',
+          });
+        }
       }
     } catch (err: unknown) {
       const e = err as { name?: string };

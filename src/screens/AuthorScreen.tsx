@@ -140,24 +140,24 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
     <div className="flex-1 max-w-md mx-auto w-full px-4 py-4 space-y-5 pb-12">
       {/* En-tête */}
       <div className="text-center space-y-1">
-        <h1 className="text-xl sm:text-2xl font-black text-[#1B1B2A]">
+        <h1 className="text-xl sm:text-2xl font-black text-[#181826]">
           Espace Auteur
         </h1>
-        <p className="text-xs text-[#6B6B7A] leading-relaxed">
+        <p className="text-xs text-[#656575] leading-relaxed">
           Enregistrez votre présentation en 30 secondes. Votre voix reste sur votre appareil et remplace la voix de synthèse.
         </p>
       </div>
 
       {/* Sélection du livre */}
-      <div className="bg-white rounded-2xl p-4 border border-[#E8E3DA] shadow-sm space-y-3">
-        <label htmlFor="book-select" className="block text-xs font-bold uppercase tracking-wider text-[#6B6B7A]">
+      <div className="bg-white rounded-2xl p-4 border border-[#E6E0D6] shadow-sm space-y-3">
+        <label htmlFor="book-select" className="block text-xs font-bold uppercase tracking-wider text-[#656575]">
           1. Choisissez votre livre :
         </label>
         <select
           id="book-select"
           value={selectedBookId}
           onChange={(e) => setSelectedBookId(e.target.value)}
-          className="w-full min-h-[44px] px-3 py-2 text-sm bg-[#FBF8F3] border border-[#E8E3DA] rounded-xl text-[#1B1B2A] font-medium focus:border-[#1F2A5C] focus:ring-1 focus:ring-[#1F2A5C]"
+          className="w-full min-h-[44px] px-3 py-2 text-sm bg-[#FBF8F3] border border-[#E6E0D6] rounded-xl text-[#181826] font-medium focus:border-[#1E2958] focus:ring-1 focus:ring-[#1E2958]"
         >
           {allBooks.map((b) => (
             <option key={b.id} value={b.id}>
@@ -167,53 +167,53 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
         </select>
 
         {/* Aperçu rapide du livre sélectionné */}
-        <div className="flex items-center gap-3 pt-2 border-t border-[#E8E3DA]">
+        <div className="flex items-center gap-3 pt-2 border-t border-[#E6E0D6]">
           <BookCover book={selectedBook} size="sm" className="shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-[#1B1B2A] truncate">{selectedBook.titre}</p>
-            <p className="text-[11px] text-[#6B6B7A]">{selectedBook.auteur} · {selectedBook.pays}</p>
-            <p className="text-[10px] text-[#6B6B7A]">{selectedBook.genre} · {selectedBook.prixFcfa} FCFA</p>
+            <p className="text-xs font-bold text-[#181826] truncate">{selectedBook.titre}</p>
+            <p className="text-[11px] text-[#656575]">{selectedBook.auteur} · {selectedBook.pays}</p>
+            <p className="text-[10px] text-[#656575]">{selectedBook.genre} · {selectedBook.prixFcfa} FCFA</p>
           </div>
         </div>
       </div>
 
       {/* Texte de présentation suggéré à lire (~70 mots, 30s) */}
-      <section aria-labelledby="script-heading" className="bg-[#FBF8F3] rounded-2xl p-4 border border-[#E8E3DA] space-y-2">
+      <section aria-labelledby="script-heading" className="bg-[#FBF8F3] rounded-2xl p-4 border border-[#E6E0D6] space-y-2">
         <div className="flex items-center justify-between">
-          <h2 id="script-heading" className="text-xs font-bold uppercase tracking-wider text-[#1F2A5C]">
+          <h2 id="script-heading" className="text-xs font-bold uppercase tracking-wider text-[#1E2958]">
             2. Texte à lire à voix haute (~70 mots) :
           </h2>
-          <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border border-[#E8E3DA] text-[#6B6B7A] font-semibold">
+          <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border border-[#E6E0D6] text-[#656575] font-semibold">
             30 secondes max
           </span>
         </div>
-        <p className="text-xs sm:text-sm text-[#1B1B2A] italic bg-white p-3 rounded-xl border border-[#E8E3DA] leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#181826] italic bg-white p-3 rounded-xl border border-[#E6E0D6] leading-relaxed">
           « {selectedBook.presentationAuteur} »
         </p>
       </section>
 
       {/* Enregistrement et gestion de la voix */}
-      <div className="bg-white rounded-2xl p-5 border border-[#E8E3DA] shadow-sm space-y-4 text-center">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#6B6B7A]">
+      <div className="bg-white rounded-2xl p-5 border border-[#E6E0D6] shadow-sm space-y-4 text-center">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#656575]">
           3. Studio d’enregistrement local
         </h2>
 
         {/* Compteur temps / Compte à rebours */}
         <div className="space-y-1">
-          <div className="text-3xl font-black text-[#1B1B2A] font-mono tracking-tight">
+          <div className="text-3xl font-black text-[#181826] font-mono tracking-tight">
             00:{elapsedSeconds < 10 ? `0${elapsedSeconds}` : elapsedSeconds}
-            <span className="text-sm font-semibold text-[#6B6B7A] ml-1">/ 00:30</span>
+            <span className="text-sm font-semibold text-[#656575] ml-1">/ 00:30</span>
           </div>
 
           {/* État lisible par icône ET mot */}
           {isRecording ? (
-            <p className="text-xs font-bold text-[#1B1B2A] flex items-center justify-center gap-1.5 animate-pulse">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#E9A23B] inline-block" aria-hidden="true" />
+            <p className="text-xs font-bold text-[#181826] flex items-center justify-center gap-1.5 animate-pulse">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#E09228] inline-block" aria-hidden="true" />
               <span>Enregistrement en direct ({remainingSeconds}s restantes)</span>
             </p>
           ) : (
-            <p className="text-xs font-semibold text-[#6B6B7A] flex items-center justify-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#1F2A5C] inline-block" aria-hidden="true" />
+            <p className="text-xs font-semibold text-[#656575] flex items-center justify-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#1E2958] inline-block" aria-hidden="true" />
               <span>Studio prêt à enregistrer</span>
             </p>
           )}
@@ -226,9 +226,9 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
               type="button"
               onClick={handleStopRecording}
               aria-label="Arrêter l’enregistrement"
-              className="min-h-[48px] px-6 py-3 bg-[#E9A23B] hover:bg-[#C9821F] text-[#1B1B2A] border-2 border-[#1F2A5C] font-bold text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 active:scale-95"
+              className="min-h-[48px] px-6 py-3 bg-[#E09228] hover:bg-[#C27B1A] text-[#181826] border-2 border-[#1E2958] font-bold text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 active:scale-95"
             >
-              <rect className="w-4 h-4 bg-[#1B1B2A] rounded-sm" />
+              <rect className="w-4 h-4 bg-[#181826] rounded-sm" />
               <span>Arrêter l’enregistrement</span>
             </button>
           ) : (
@@ -236,7 +236,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
               type="button"
               onClick={handleStartRecording}
               aria-label="Démarrer l’enregistrement vocal"
-              className="min-h-[48px] px-6 py-3 bg-[#1F2A5C] hover:bg-[#161E42] text-white font-bold text-sm rounded-2xl shadow-md transition-all flex items-center gap-2 active:scale-95"
+              className="min-h-[48px] px-6 py-3 bg-[#1E2958] hover:bg-[#141C3E] text-white font-bold text-sm rounded-2xl shadow-md transition-all flex items-center gap-2 active:scale-95"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -248,13 +248,13 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
 
         {/* Prévisualisation après enregistrement d'un essai */}
         {previewUrl && !isRecording && (
-          <div className="pt-3 border-t border-[#E8E3DA] space-y-3 text-left">
-            <div className="p-3 bg-[#FDF3E3] rounded-xl border border-[#E9A23B] space-y-1">
-              <p className="text-xs font-bold text-[#1B1B2A] flex items-center gap-1.5">
+          <div className="pt-3 border-t border-[#E6E0D6] space-y-3 text-left">
+            <div className="p-3 bg-[#FDF4E7] rounded-xl border border-[#E09228] space-y-1">
+              <p className="text-xs font-bold text-[#181826] flex items-center gap-1.5">
                 <span>🎧</span>
                 <span>Essai enregistré. Voulez-vous le définir comme référence ?</span>
               </p>
-              <p className="text-[11px] text-[#6B6B7A]">
+              <p className="text-[11px] text-[#656575]">
                 Écoutez l’extrait ci-dessous pour valider la clarté et le rythme avant confirmation.
               </p>
             </div>
@@ -265,7 +265,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
               <button
                 type="button"
                 onClick={handleSaveToIndexedDB}
-                className="flex-1 min-h-[44px] px-4 py-2 bg-[#1F2A5C] hover:bg-[#161E42] text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 min-h-[44px] px-4 py-2 bg-[#1E2958] hover:bg-[#141C3E] text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5"
               >
                 <span>✓</span>
                 <span>Définir comme référence</span>
@@ -278,7 +278,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
                   setPreviewUrl(null);
                   setStatusMessage(null);
                 }}
-                className="min-h-[44px] px-4 py-2 bg-[#FBF8F3] hover:bg-[#EFEAE1] text-[#6B6B7A] text-xs font-semibold rounded-xl border border-[#E8E3DA] transition-colors"
+                className="min-h-[44px] px-4 py-2 bg-[#FBF8F3] hover:bg-[#EFEAE1] text-[#656575] text-xs font-semibold rounded-xl border border-[#E6E0D6] transition-colors"
               >
                 Recommencer l’essai
               </button>
@@ -288,9 +288,9 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
 
         {/* État si un enregistrement de référence existe déjà dans IndexedDB */}
         {existingVoice && !previewUrl && !isRecording && (
-          <div className="pt-3 border-t border-[#E8E3DA] space-y-2 text-left">
+          <div className="pt-3 border-t border-[#E6E0D6] space-y-2 text-left">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#1F2A5C] bg-[#E8ECFA] border border-[#1F2A5C]/20 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[#1E2958] bg-[#E9EDF9] border border-[#1E2958]/20 px-2.5 py-1 rounded-full flex items-center gap-1.5">
                 <span>✓</span> Voix de référence active sur cet appareil
               </span>
               <button
@@ -308,7 +308,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
               className="w-full h-10"
             />
 
-            <p className="text-[11px] text-[#6B6B7A] italic">
+            <p className="text-[11px] text-[#656575] italic">
               Cette voix d’auteur personnalisée est désormais jouée sur la fiche du livre.
             </p>
           </div>
@@ -316,7 +316,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
 
         {/* Message de statut */}
         {statusMessage && !previewUrl && (
-          <p className="text-xs text-[#1F2A5C] bg-[#E8ECFA] p-2.5 rounded-xl border border-[#1F2A5C]/20">
+          <p className="text-xs text-[#1E2958] bg-[#E9EDF9] p-2.5 rounded-xl border border-[#1E2958]/20">
             {statusMessage}
           </p>
         )}
@@ -334,7 +334,7 @@ export const AuthorScreen: React.FC<AuthorScreenProps> = ({ initialBookId, onNav
         <button
           type="button"
           onClick={() => onNavigate({ name: 'book', bookId: selectedBook.id })}
-          className="text-xs font-bold text-[#1F2A5C] hover:underline min-h-[44px] inline-flex items-center"
+          className="text-xs font-bold text-[#1E2958] hover:underline min-h-[44px] inline-flex items-center"
         >
           Voir la fiche de « {selectedBook.titre} » →
         </button>

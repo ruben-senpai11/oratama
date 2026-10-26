@@ -57,35 +57,35 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       {parsed.langueNonDisponible && (
         <div
           role="status"
-          className="p-4 rounded-xl bg-[#FDF3E3] border border-[#E9A23B] text-[#1B1B2A] text-xs leading-relaxed space-y-1 shadow-sm"
+          className="p-4 rounded-xl bg-[#FDF4E7] border border-[#E09228] text-[#181826] text-xs leading-relaxed space-y-1 shadow-sm"
         >
-          <p className="font-bold text-sm text-[#1B1B2A] flex items-center gap-1.5">
+          <p className="font-bold text-sm text-[#181826] flex items-center gap-1.5">
             <span>ℹ️</span> Langue {parsed.langueDemandee} non prise en charge
           </p>
-          <p className="text-[#6B6B7A]">{parsed.langueNonDisponibleMessage}</p>
+          <p className="text-[#656575]">{parsed.langueNonDisponibleMessage}</p>
         </div>
       )}
 
       {/* Requête et filtres actifs */}
-      <div className="bg-white rounded-xl p-3.5 border border-[#E8E3DA] shadow-sm space-y-2.5">
+      <div className="bg-white rounded-xl p-3.5 border border-[#E6E0D6] shadow-sm space-y-2.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-[#6B6B7A]">Demande analysée :</span>
+          <span className="text-[#656575]">Demande analysée :</span>
           <button
             type="button"
             onClick={() => onNavigate({ name: 'home' })}
-            className="text-[#1F2A5C] hover:underline font-semibold"
+            className="text-[#1E2958] hover:underline font-semibold"
           >
             Modifier
           </button>
         </div>
-        <p className="text-sm font-bold text-[#1B1B2A] italic">
+        <p className="text-sm font-bold text-[#181826] italic">
           « {rawQuery || 'Recherche'} »
         </p>
 
         {/* Puces des critères reconnus */}
         {activeFilters.length > 0 ? (
           <div>
-            <p className="text-[11px] font-semibold text-[#6B6B7A] uppercase tracking-wider mb-1.5">
+            <p className="text-[11px] font-semibold text-[#656575] uppercase tracking-wider mb-1.5">
               Filtres compris (touchez pour retirer) :
             </p>
             <div className="flex flex-wrap gap-1.5" role="list" aria-label="Filtres actifs">
@@ -95,7 +95,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                   type="button"
                   onClick={() => handleRemoveFilter(filter.id)}
                   aria-label={`Supprimer le filtre ${filter.label}`}
-                  className="inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1 rounded-full text-xs font-semibold bg-[#E8ECFA] text-[#1F2A5C] border border-[#1F2A5C]/30 hover:bg-[#1F2A5C] hover:text-white transition-colors"
+                  className="inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1 rounded-full text-xs font-semibold bg-[#E9EDF9] text-[#1E2958] border border-[#1E2958]/30 hover:bg-[#1E2958] hover:text-white transition-colors"
                 >
                   <span>{filter.label}</span>
                   <span className="font-bold text-xs" aria-hidden="true">✕</span>
@@ -104,25 +104,25 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="text-xs text-[#6B6B7A] hover:text-[#1B1B2A] underline px-2 py-1"
+                className="text-xs text-[#656575] hover:text-[#181826] underline px-2 py-1"
               >
                 Tout effacer
               </button>
             </div>
           </div>
         ) : (
-          <p className="text-xs text-[#6B6B7A] italic">
+          <p className="text-xs text-[#656575] italic">
             Aucun filtre spécifique actif (tous les livres sont affichés).
           </p>
         )}
       </div>
 
       {/* Nombre de résultats trouvés */}
-      <div className="flex items-center justify-between text-xs text-[#6B6B7A] px-1">
-        <span className="font-semibold text-[#1B1B2A]">
+      <div className="flex items-center justify-between text-xs text-[#656575] px-1">
+        <span className="font-semibold text-[#181826]">
           {scoredResults.length} {scoredResults.length > 1 ? 'livres trouvés' : 'livre trouvé'}
         </span>
-        <span className="text-[11px] text-[#6B6B7A]">Classés par pertinence</span>
+        <span className="text-[11px] text-[#656575]">Classés par pertinence</span>
       </div>
 
       {/* Liste des cartes ou état vide */}
@@ -135,7 +135,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               <article
                 key={book.id}
                 onClick={() => onNavigate({ name: 'book', bookId: book.id })}
-                className="bg-white rounded-2xl p-3.5 border border-[#E8E3DA] shadow-sm hover:border-[#1F2A5C]/40 transition-all cursor-pointer flex gap-3 group focus-within:ring-2 focus-within:ring-[#1F2A5C]"
+                className="bg-white rounded-2xl p-3.5 border border-[#E6E0D6] shadow-sm hover:border-[#1E2958]/40 transition-all cursor-pointer flex gap-3 group focus-within:ring-2 focus-within:ring-[#1E2958]"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -154,34 +154,34 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
                   <div>
                     <div className="flex items-start justify-between gap-1 mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#1F2A5C] bg-[#E8ECFA] px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#1E2958] bg-[#E9EDF9] px-1.5 py-0.5 rounded">
                         {book.genre}
                       </span>
-                      <span className="text-xs font-bold text-[#1B1B2A]">
+                      <span className="text-xs font-bold text-[#181826]">
                         {book.prixFcfa.toLocaleString('fr-FR')} FCFA
                       </span>
                     </div>
 
-                    <h2 className="text-sm font-bold text-[#1B1B2A] leading-tight line-clamp-1 group-hover:text-[#1F2A5C] transition-colors">
+                    <h2 className="text-sm font-bold text-[#181826] leading-tight line-clamp-1 group-hover:text-[#1E2958] transition-colors">
                       {book.titre}
                     </h2>
-                    <p className="text-xs text-[#6B6B7A] truncate mt-0.5">
-                      {book.auteur} · <span className="font-medium text-[#1B1B2A]">{book.pays}</span>
+                    <p className="text-xs text-[#656575] truncate mt-0.5">
+                      {book.auteur} · <span className="font-medium text-[#181826]">{book.pays}</span>
                     </p>
 
-                    <p className="text-[11px] text-[#6B6B7A] mt-0.5">
+                    <p className="text-[11px] text-[#656575] mt-0.5">
                       {book.pages} pages · {book.themes.slice(0, 3).join(', ')}
                     </p>
                   </div>
 
                   {/* Badges voix et pourquoi ce résultat */}
-                  <div className="mt-2 pt-2 border-t border-[#E8E3DA] space-y-1">
+                  <div className="mt-2 pt-2 border-t border-[#E6E0D6] space-y-1">
                     <div className="flex items-center gap-1.5">
                       <span
                         className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           hasAuthorRecording
-                            ? 'bg-[#E9A23B] text-[#1B1B2A] border border-[#C9821F]'
-                            : 'bg-[#E8ECFA] text-[#1F2A5C] border border-[#1F2A5C]/20'
+                            ? 'bg-[#E09228] text-[#181826] border border-[#C27B1A]'
+                            : 'bg-[#E9EDF9] text-[#1E2958] border border-[#1E2958]/20'
                         }`}
                       >
                         <span aria-hidden="true">🎙️</span>
@@ -190,8 +190,8 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                     </div>
 
                     {/* Ligne "Pourquoi ce résultat" */}
-                    <p className="text-[11px] text-[#6B6B7A] leading-snug line-clamp-2">
-                      <strong className="text-[#1F2A5C] font-semibold">Pourquoi ce résultat : </strong>
+                    <p className="text-[11px] text-[#656575] leading-snug line-clamp-2">
+                      <strong className="text-[#1E2958] font-semibold">Pourquoi ce résultat : </strong>
                       {matchReasons.length > 0 ? matchReasons.join(' · ') : 'Titre disponible au catalogue'}
                     </p>
                   </div>
@@ -206,7 +206,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setVisibleCount((prev) => prev + 25)}
-                className="min-h-[44px] px-6 py-2.5 rounded-xl bg-white border-2 border-[#1F2A5C] text-[#1F2A5C] text-xs font-bold hover:bg-[#1F2A5C] hover:text-white transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1F2A5C]"
+                className="min-h-[44px] px-6 py-2.5 rounded-xl bg-white border-2 border-[#1E2958] text-[#1E2958] text-xs font-bold hover:bg-[#1E2958] hover:text-white transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E2958]"
               >
                 Afficher plus de livres ({scoredResults.length - visibleCount} restants)
               </button>
@@ -215,14 +215,14 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         </div>
       ) : (
         /* Cas sans résultat avec suggestions utiles */
-        <div className="bg-white rounded-2xl p-6 border border-[#E8E3DA] text-center space-y-4 shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-[#E8ECFA] text-[#1F2A5C] mx-auto flex items-center justify-center text-xl">
+        <div className="bg-white rounded-2xl p-6 border border-[#E6E0D6] text-center space-y-4 shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-[#E9EDF9] text-[#1E2958] mx-auto flex items-center justify-center text-xl">
             🔍
           </div>
-          <h2 className="text-base font-bold text-[#1B1B2A]">
+          <h2 className="text-base font-bold text-[#181826]">
             Aucun livre ne correspond exactement à tous vos critères combinés
           </h2>
-          <p className="text-xs text-[#6B6B7A] leading-relaxed">
+          <p className="text-xs text-[#656575] leading-relaxed">
             Nous avons cherché parmi les 1 000 ouvrages fictifs. Essayez de retirer certains filtres (comme la longueur ou le prix) ou découvrez nos suggestions ci-dessous.
           </p>
 
@@ -230,14 +230,14 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             <button
               type="button"
               onClick={handleResetFilters}
-              className="min-h-[44px] px-4 py-2 bg-[#1F2A5C] text-white text-xs font-semibold rounded-xl hover:bg-[#161E42] transition-colors"
+              className="min-h-[44px] px-4 py-2 bg-[#1E2958] text-white text-xs font-semibold rounded-xl hover:bg-[#141C3E] transition-colors"
             >
               Afficher tous les livres disponibles
             </button>
           </div>
 
-          <div className="text-left pt-4 border-t border-[#E8E3DA]">
-            <p className="text-xs font-bold text-[#1B1B2A] mb-2">
+          <div className="text-left pt-4 border-t border-[#E6E0D6]">
+            <p className="text-xs font-bold text-[#181826] mb-2">
               Suggestions populaires :
             </p>
             <div className="space-y-2">
@@ -248,8 +248,8 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                   onClick={() => onNavigate({ name: 'book', bookId: b.id })}
                   className="w-full text-left p-2.5 rounded-lg bg-[#FBF8F3] hover:bg-[#EFEAE1] text-xs transition-colors flex items-center justify-between"
                 >
-                  <span className="font-semibold text-[#1B1B2A] truncate">{b.titre} — {b.auteur} ({b.pays})</span>
-                  <span className="text-[#1F2A5C] shrink-0 font-bold ml-2">Voir →</span>
+                  <span className="font-semibold text-[#181826] truncate">{b.titre} — {b.auteur} ({b.pays})</span>
+                  <span className="text-[#1E2958] shrink-0 font-bold ml-2">Voir →</span>
                 </button>
               ))}
             </div>

@@ -32,7 +32,7 @@ export default async function handler(req: any, res: any) {
 Écoute attentivement cet enregistrement audio en français (qui peut comporter des accents ouest-africains, des noms de villes ou pays d'Afrique comme Cotonou, Porto-Novo, Ganvié, Abidjan, Dakar, Lomé, Bamako, etc., des titres de livres, des genres littéraires ou des termes en langues locales comme le fon, yoruba, wolof).
 
 Mission :
-1. Transcris fidèlement la totalité des propos de l'utilisateur.
+1. Transcris fidèlement la totalité des propos de l'utilisateur dans le champ "transcript". Même si l'enregistrement est court ou comporte du bruit ambiant, fais de ton mieux pour transcrire les paroles prononcées.
 2. Analyse sa demande pour en extraire les critères de recherche littéraire dans la bibliothèque OraTama.
 
 Réponds STRICTEMENT avec un objet JSON valide respectant cette structure :
@@ -46,7 +46,7 @@ Réponds STRICTEMENT avec un objet JSON valide respectant cette structure :
   "maxPrixFcfa": nombre ou null
 }
 
-IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte avant ou après.`;
+IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte avant ou après. Ne laisse "transcript" vide que si l'audio est un silence absolu.`;
 
     const candidateModels = Array.from(
       new Set([
@@ -87,7 +87,7 @@ IMPORTANT : Ne renvoie que le JSON pur, sans balises de code markdown ni texte a
               responseMimeType: 'application/json'
             }
           }),
-          signal: AbortSignal.timeout(10000)
+          signal: AbortSignal.timeout(12000)
         });
 
         if (!geminiRes.ok) {

@@ -42,11 +42,11 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
   if (!book) {
     return (
       <div className="flex-1 max-w-md mx-auto w-full px-4 py-8 text-center space-y-4">
-        <p className="text-sm font-bold text-[#1B1B2A]">Livre non trouvé</p>
+        <p className="text-sm font-bold text-[#181826]">Livre non trouvé</p>
         <button
           type="button"
           onClick={() => onNavigate({ name: 'home' })}
-          className="min-h-[44px] px-4 py-2 bg-[#1F2A5C] text-white text-xs font-semibold rounded-xl"
+          className="min-h-[44px] px-4 py-2 bg-[#1E2958] text-white text-xs font-semibold rounded-xl"
         >
           Retourner à l’accueil
         </button>
@@ -165,23 +165,23 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
       <div className="flex gap-4 items-start">
         <BookCover book={book} size="md" className="shrink-0 shadow-lg" />
         <div className="flex-1 min-w-0 space-y-1.5">
-          <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#1F2A5C] bg-[#E8ECFA] px-2 py-0.5 rounded-full">
+          <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#1E2958] bg-[#E9EDF9] px-2 py-0.5 rounded-full">
             {book.genre}
           </span>
-          <h1 className="text-base sm:text-lg font-black text-[#1B1B2A] leading-snug">
+          <h1 className="text-base sm:text-lg font-black text-[#181826] leading-snug">
             {book.titre}
           </h1>
-          <p className="text-xs font-semibold text-[#6B6B7A]">
+          <p className="text-xs font-semibold text-[#656575]">
             Par {book.auteur}
           </p>
-          <p className="text-xs text-[#6B6B7A]">
-            Origine : <span className="font-semibold text-[#1B1B2A]">{book.pays}</span>
+          <p className="text-xs text-[#656575]">
+            Origine : <span className="font-semibold text-[#181826]">{book.pays}</span>
           </p>
-          <div className="pt-1 flex flex-wrap gap-2 text-xs font-bold text-[#1B1B2A]">
-            <span className="bg-white px-2 py-1 rounded-lg border border-[#E8E3DA]">
+          <div className="pt-1 flex flex-wrap gap-2 text-xs font-bold text-[#181826]">
+            <span className="bg-white px-2 py-1 rounded-lg border border-[#E6E0D6]">
               {book.pages} pages
             </span>
-            <span className="bg-white px-2 py-1 rounded-lg border border-[#E8E3DA] text-[#1F2A5C]">
+            <span className="bg-white px-2 py-1 rounded-lg border border-[#E6E0D6] text-[#1E2958]">
               {book.prixFcfa.toLocaleString('fr-FR')} FCFA
             </span>
           </div>
@@ -189,18 +189,18 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
       </div>
 
       {/* Résumé original */}
-      <section aria-labelledby="resume-heading" className="bg-white rounded-2xl p-4 border border-[#E8E3DA] shadow-sm space-y-2">
-        <h2 id="resume-heading" className="text-xs font-bold uppercase tracking-wider text-[#6B6B7A]">
+      <section aria-labelledby="resume-heading" className="bg-white rounded-2xl p-4 border border-[#E6E0D6] shadow-sm space-y-2">
+        <h2 id="resume-heading" className="text-xs font-bold uppercase tracking-wider text-[#656575]">
           Résumé
         </h2>
-        <p className="text-xs sm:text-sm text-[#1B1B2A] leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#181826] leading-relaxed">
           {book.resume}
         </p>
         <div className="flex flex-wrap gap-1 pt-1">
           {book.themes.map((theme) => (
             <span
               key={theme}
-              className="text-[10px] font-medium bg-[#FBF8F3] text-[#6B6B7A] px-2 py-0.5 rounded-md border border-[#E8E3DA]"
+              className="text-[10px] font-medium bg-[#FBF8F3] text-[#656575] px-2 py-0.5 rounded-md border border-[#E6E0D6]"
             >
               #{theme}
             </span>
@@ -211,27 +211,27 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
       {/* Lecteur de 30 secondes : « La voix de l'auteur » avec accent voix ocre */}
       <section
         aria-labelledby="author-voice-heading"
-        className="bg-white rounded-2xl p-4 border-2 border-[#E9A23B]/40 shadow-sm space-y-3"
+        className="bg-white rounded-2xl p-4 border-2 border-[#E09228]/40 shadow-sm space-y-3"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg" aria-hidden="true">🎙️</span>
             <div>
-              <h2 id="author-voice-heading" className="text-xs font-bold uppercase tracking-wider text-[#1F2A5C]">
+              <h2 id="author-voice-heading" className="text-xs font-bold uppercase tracking-wider text-[#1E2958]">
                 La voix de l’auteur (30 secondes)
               </h2>
-              <p className="text-[11px] text-[#6B6B7A]">
+              <p className="text-[11px] text-[#656575]">
                 L’auteur présente son livre de vive voix
               </p>
             </div>
           </div>
 
-          {/* Badge voix de synthèse (démo) ou voix enregistrée (accent ocre avec texte sombre) */}
+          {/* Badge voix de synthèse (démo) ou voix enregistrée */}
           <span
             className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
               recordedVoice
-                ? 'bg-[#E9A23B] text-[#1B1B2A] border border-[#C9821F]'
-                : 'bg-[#E8ECFA] text-[#1F2A5C] border border-[#1F2A5C]/20'
+                ? 'bg-[#E09228] text-[#181826] border border-[#C27B1A]'
+                : 'bg-[#E9EDF9] text-[#1E2958] border border-[#1E2958]/20'
             }`}
           >
             {recordedVoice ? 'Voix enregistrée (locale)' : 'Voix de synthèse (démo)'}
@@ -239,15 +239,15 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
         </div>
 
         {/* Texte de la présentation (~70 mots) */}
-        <blockquote className="text-xs italic text-[#6B6B7A] bg-[#FBF8F3] p-3 rounded-xl border border-[#E8E3DA] leading-relaxed">
+        <blockquote className="text-xs italic text-[#656575] bg-[#FBF8F3] p-3 rounded-xl border border-[#E6E0D6] leading-relaxed">
           « {book.presentationAuteur} »
         </blockquote>
 
         {/* Barre de progression audio */}
         <div className="space-y-1">
-          <div className="h-2 w-full bg-[#E8E3DA] rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-[#E6E0D6] rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#E9A23B] transition-all duration-300 rounded-full"
+              className="h-full bg-[#E09228] transition-all duration-300 rounded-full"
               style={{ width: `${audioProgress}%` }}
               aria-valuenow={audioProgress}
               aria-valuemin={0}
@@ -255,19 +255,19 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
               role="progressbar"
             />
           </div>
-          <div className="flex justify-between text-[10px] font-semibold text-[#6B6B7A]">
+          <div className="flex justify-between text-[10px] font-semibold text-[#656575]">
             <span>0:{playbackTime < 10 ? `0${playbackTime}` : playbackTime}</span>
             <span>0:{recordedVoice ? Math.round(recordedVoice.durationSeconds) : '25'}</span>
           </div>
         </div>
 
-        {/* Bouton de lecture 30s (accent voix ocre avec texte sombre #1B1B2A pour respecter la charte) */}
+        {/* Bouton de lecture 30s */}
         <div className="flex items-center justify-between pt-1">
           <button
             type="button"
             onClick={handleToggleAuthorVoice}
             aria-label={isPlayingAuthorVoice ? 'Arrêter la présentation de l’auteur' : 'Écouter la présentation de l’auteur'}
-            className="min-h-[44px] px-4 py-2.5 bg-[#E9A23B] hover:bg-[#C9821F] text-[#1B1B2A] text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 border border-[#C9821F]"
+            className="min-h-[44px] px-4 py-2.5 bg-[#E09228] hover:bg-[#C27B1A] text-[#181826] text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 border border-[#C27B1A]"
           >
             {isPlayingAuthorVoice ? (
               <>
@@ -290,7 +290,7 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
           <button
             type="button"
             onClick={() => onNavigate({ name: 'author', bookId: book.id })}
-            className="text-[11px] text-[#1F2A5C] hover:underline font-semibold min-h-[44px] flex items-center"
+            className="text-[11px] text-[#1E2958] hover:underline font-semibold min-h-[44px] flex items-center"
           >
             {recordedVoice ? 'Modifier la voix de référence →' : 'Enregistrer ma voix d’auteur →'}
           </button>
@@ -304,11 +304,11 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
       </section>
 
       {/* Extrait original du livre (~120 mots) */}
-      <section aria-labelledby="extrait-heading" className="bg-white rounded-2xl p-4 border border-[#E8E3DA] shadow-sm space-y-2">
-        <h2 id="extrait-heading" className="text-xs font-bold uppercase tracking-wider text-[#6B6B7A]">
+      <section aria-labelledby="extrait-heading" className="bg-white rounded-2xl p-4 border border-[#E6E0D6] shadow-sm space-y-2">
+        <h2 id="extrait-heading" className="text-xs font-bold uppercase tracking-wider text-[#656575]">
           Extrait du livre (~120 mots)
         </h2>
-        <p className="text-xs sm:text-sm text-[#1B1B2A] leading-relaxed italic bg-[#FBF8F3] p-3.5 rounded-xl border border-[#E8E3DA]">
+        <p className="text-xs sm:text-sm text-[#181826] leading-relaxed italic bg-[#FBF8F3] p-3.5 rounded-xl border border-[#E6E0D6]">
           {book.extrait}
         </p>
       </section>
@@ -321,7 +321,7 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
             stopAllAudio();
             onNavigate({ name: 'reader', bookId: book.id });
           }}
-          className="w-full min-h-[48px] px-6 py-3.5 bg-[#1F2A5C] hover:bg-[#161E42] text-white font-bold text-sm sm:text-base rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+          className="w-full min-h-[48px] px-6 py-3.5 bg-[#1E2958] hover:bg-[#141C3E] text-white font-bold text-sm sm:text-base rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
         >
           <span aria-hidden="true">📖</span>
           <span>Lire cet extrait à voix haute</span>
@@ -333,7 +333,7 @@ export const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ bookId, onNa
           )}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full min-h-[48px] px-6 py-3 bg-white hover:bg-[#E8ECFA]/50 text-[#1F2A5C] font-bold text-xs sm:text-sm rounded-2xl border-2 border-[#1F2A5C] shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+          className="w-full min-h-[48px] px-6 py-3 bg-white hover:bg-[#E9EDF9]/50 text-[#1E2958] font-bold text-xs sm:text-sm rounded-2xl border-2 border-[#1E2958] shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
           aria-label={`Commander l'ouvrage ${book.titre} sur WhatsApp pour ${book.prixFcfa} FCFA (ouvre un nouvel onglet)`}
         >
           <span aria-hidden="true">💬</span>

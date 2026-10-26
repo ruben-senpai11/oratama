@@ -116,7 +116,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
     return (
       <aside
         aria-label="Mode diagnostic réduit"
-        className="fixed bottom-3 right-3 z-50 bg-[#1F2A5C] text-white px-3 py-2 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold border border-[#E9A23B]/60"
+        className="fixed bottom-3 right-3 z-50 bg-[#1E2958] text-white px-3 py-2 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold border border-[#E09228]/60"
       >
         <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
         <span>Diagnostic (?debug=1)</span>
@@ -136,10 +136,10 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
     <aside
       role="region"
       aria-labelledby="diag-panel-title"
-      className="fixed bottom-2 left-2 right-2 max-w-md mx-auto z-50 bg-[#FFFFFF] rounded-2xl shadow-2xl border-2 border-[#1F2A5C] text-[#1B1B2A] max-h-[85vh] flex flex-col overflow-hidden text-xs"
+      className="fixed bottom-2 left-2 right-2 max-w-md mx-auto z-50 bg-[#FFFFFF] rounded-2xl shadow-2xl border-2 border-[#1E2958] text-[#181826] max-h-[85vh] flex flex-col overflow-hidden text-xs"
     >
       {/* Barre d'en-tête du diagnostic */}
-      <div className="bg-[#1F2A5C] text-white p-3 flex items-center justify-between">
+      <div className="bg-[#1E2958] text-white p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-base" aria-hidden="true">🛠️</span>
           <div>
@@ -177,14 +177,14 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
       </div>
 
       {/* Onglets de navigation interne */}
-      <div className="flex border-b border-[#E8E3DA] bg-[#FBF8F3]">
+      <div className="flex border-b border-[#E6E0D6] bg-[#FBF8F3]">
         <button
           type="button"
           onClick={() => setActiveTab('status')}
           className={`flex-1 min-h-[40px] font-bold text-center border-b-2 transition-colors ${
             activeTab === 'status'
-              ? 'border-[#1F2A5C] text-[#1F2A5C] bg-white'
-              : 'border-transparent text-[#6B6B7A] hover:text-[#1B1B2A]'
+              ? 'border-[#1E2958] text-[#1E2958] bg-white'
+              : 'border-transparent text-[#656575] hover:text-[#181826]'
           }`}
         >
           État système
@@ -194,8 +194,8 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
           onClick={() => setActiveTab('errors')}
           className={`flex-1 min-h-[40px] font-bold text-center border-b-2 transition-colors ${
             activeTab === 'errors'
-              ? 'border-[#1F2A5C] text-[#1F2A5C] bg-white'
-              : 'border-transparent text-[#6B6B7A] hover:text-[#1B1B2A]'
+              ? 'border-[#1E2958] text-[#1E2958] bg-white'
+              : 'border-transparent text-[#656575] hover:text-[#181826]'
           }`}
         >
           Codes d'erreurs
@@ -205,13 +205,13 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
           onClick={() => setActiveTab('logs')}
           className={`flex-1 min-h-[40px] font-bold text-center border-b-2 transition-colors flex items-center justify-center gap-1 ${
             activeTab === 'logs'
-              ? 'border-[#1F2A5C] text-[#1F2A5C] bg-white'
-              : 'border-transparent text-[#6B6B7A] hover:text-[#1B1B2A]'
+              ? 'border-[#1E2958] text-[#1E2958] bg-white'
+              : 'border-transparent text-[#656575] hover:text-[#181826]'
           }`}
         >
           <span>Événements</span>
           {events.length > 0 && (
-            <span className="px-1.5 py-0.2 bg-[#1F2A5C] text-white text-[9px] rounded-full">
+            <span className="px-1.5 py-0.2 bg-[#1E2958] text-white text-[9px] rounded-full">
               {events.length}
             </span>
           )}
@@ -223,12 +223,12 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
         {activeTab === 'status' && (
           <div className="space-y-3">
             {/* 1. Navigateur détecté */}
-            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E8E3DA] space-y-1">
-              <span className="text-[10px] uppercase font-bold text-[#6B6B7A] tracking-wider block">
+            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E6E0D6] space-y-1">
+              <span className="text-[10px] uppercase font-bold text-[#656575] tracking-wider block">
                 1. Navigateur détecté
               </span>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-[#1B1B2A]">
+                <span className="font-bold text-sm text-[#181826]">
                   {browserInfo?.name || 'Détection en cours...'}
                 </span>
                 {browserInfo?.isBrave && (
@@ -238,15 +238,15 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                 )}
               </div>
               {browserInfo?.details && (
-                <p className="text-[11px] text-[#6B6B7A] leading-tight">
+                <p className="text-[11px] text-[#656575] leading-tight">
                   {browserInfo.details}
                 </p>
               )}
             </div>
 
             {/* 2. Statut SpeechRecognition */}
-            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E8E3DA] space-y-1">
-              <span className="text-[10px] uppercase font-bold text-[#6B6B7A] tracking-wider block">
+            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E6E0D6] space-y-1">
+              <span className="text-[10px] uppercase font-bold text-[#656575] tracking-wider block">
                 2. API SpeechRecognition
               </span>
               <div className="flex items-center gap-2">
@@ -259,27 +259,27 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                   {hasSpeech ? 'Disponible dans ce navigateur' : 'Non supporté (Firefox / WebView sans Web Speech)'}
                 </span>
               </div>
-              <p className="text-[10px] text-[#6B6B7A]">
+              <p className="text-[10px] text-[#656575]">
                 Moteur : {hasSpeech ? 'webkitSpeechRecognition / SpeechRecognition standard' : 'Repli automatique sur champ texte'}
               </p>
             </div>
 
             {/* 3. Langue utilisée */}
-            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E8E3DA] flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E6E0D6] flex items-center justify-between">
               <div>
-                <span className="text-[10px] uppercase font-bold text-[#6B6B7A] tracking-wider block">
+                <span className="text-[10px] uppercase font-bold text-[#656575] tracking-wider block">
                   3. Langue de reconnaissance
                 </span>
-                <span className="font-bold text-xs text-[#1B1B2A]">fr-FR (Français)</span>
+                <span className="font-bold text-xs text-[#181826]">fr-FR (Français)</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-[#E8ECFA] text-[#1F2A5C] font-bold text-[10px]">
+              <span className="px-2 py-0.5 rounded bg-[#E9EDF9] text-[#1E2958] font-bold text-[10px]">
                 Actif
               </span>
             </div>
 
             {/* 4. Statut Permission Micro & Actions */}
-            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E8E3DA] space-y-2">
-              <span className="text-[10px] uppercase font-bold text-[#6B6B7A] tracking-wider block">
+            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E6E0D6] space-y-2">
+              <span className="text-[10px] uppercase font-bold text-[#656575] tracking-wider block">
                 4. Permission Microphone Matériel
               </span>
               <div className="flex items-center justify-between">
@@ -293,7 +293,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                         : 'bg-amber-500'
                     }`}
                   />
-                  <span className="font-bold text-xs capitalize text-[#1B1B2A]">
+                  <span className="font-bold text-xs capitalize text-[#181826]">
                     {micPermission}
                   </span>
                 </div>
@@ -301,23 +301,23 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                 <button
                   type="button"
                   onClick={() => void handleRequestMic()}
-                  className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#1F2A5C] text-white text-[11px] font-bold hover:bg-[#161E42] active:scale-95 transition-all shadow-sm"
+                  className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#1E2958] text-white text-[11px] font-bold hover:bg-[#141C3E] active:scale-95 transition-all shadow-sm"
                 >
                   Demander la permission
                 </button>
               </div>
 
               {browserInfo?.isBrave && (
-                <div className="p-2 rounded-lg bg-[#FDF3E3] border border-[#E9A23B] text-[10px] text-[#1B1B2A] leading-relaxed">
+                <div className="p-2 rounded-lg bg-[#FDF4E7] border border-[#E09228] text-[10px] text-[#181826] leading-relaxed">
                   <strong>💡 Conseil Brave :</strong> Si le test échoue avec <code className="bg-black/10 px-1 rounded">service-not-allowed</code>, ouvrez les paramètres Brave et autorisez les services vocaux Google, ou utilisez la saisie clavier.
                 </div>
               )}
             </div>
 
             {/* Testeur en direct */}
-            <div className="p-3 rounded-xl bg-white border-2 border-dashed border-[#1F2A5C]/40 space-y-2">
+            <div className="p-3 rounded-xl bg-white border-2 border-dashed border-[#1E2958]/40 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-xs text-[#1F2A5C]">
+                <span className="font-bold text-xs text-[#1E2958]">
                   Tester l'écoute SpeechRecognition (5s) :
                 </span>
                 <button
@@ -327,7 +327,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                   className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     isTestingSpeech
                       ? 'bg-amber-500 text-white animate-pulse'
-                      : 'bg-[#1F2A5C] text-white hover:bg-[#161E42]'
+                      : 'bg-[#1E2958] text-white hover:bg-[#141C3E]'
                   } disabled:opacity-50`}
                 >
                   {isTestingSpeech ? 'Écoute en cours...' : 'Lancer le test'}
@@ -341,15 +341,15 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
               )}
 
               {testTranscript && (
-                <div className="p-2 rounded bg-[#E8ECFA] text-xs font-medium text-[#1F2A5C]">
+                <div className="p-2 rounded bg-[#E9EDF9] text-xs font-medium text-[#1E2958]">
                   Reconnu : « {testTranscript} »
                 </div>
               )}
             </div>
 
             {/* 5. Moteur Vocal Intelligent (Gemini Flash Serveur) */}
-            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E8E3DA] space-y-2">
-              <span className="text-[10px] uppercase font-bold text-[#6B6B7A] tracking-wider block">
+            <div className="p-2.5 rounded-xl bg-[#FBF8F3] border border-[#E6E0D6] space-y-2">
+              <span className="text-[10px] uppercase font-bold text-[#656575] tracking-wider block">
                 5. Reconnaissance Vocale Serveur (Google AI)
               </span>
               <div className="flex items-center justify-between">
@@ -359,16 +359,16 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                       isGeminiActive ? 'bg-emerald-500' : 'bg-gray-400'
                     }`}
                   />
-                  <span className="font-bold text-xs text-[#1B1B2A]">
+                  <span className="font-bold text-xs text-[#181826]">
                     {isGeminiActive ? 'Serveur IA connecté (Écoute libre)' : 'Secours local (Reconnaissance navigateur)'}
                   </span>
                 </div>
 
-                <span className="text-[10px] font-semibold text-[#1F2A5C] bg-[#E8ECFA] px-2 py-0.5 rounded-md border border-[#1F2A5C]/20">
+                <span className="text-[10px] font-semibold text-[#1E2958] bg-[#E9EDF9] px-2 py-0.5 rounded-md border border-[#1E2958]/20">
                   {isGeminiActive ? 'Sécurisé (Proxy)' : 'Offline'}
                 </span>
               </div>
-              <p className="text-[10px] text-[#6B6B7A] leading-tight">
+              <p className="text-[10px] text-[#656575] leading-tight">
                 {isGeminiActive
                   ? 'Capture audio continue MediaRecorder + transcription multimodale Gemini sans limite de durée. Clé sécurisée côté serveur.'
                   : 'Repli automatique sur le moteur Web Speech standard du navigateur si le serveur n’est pas joignable.'}
@@ -380,7 +380,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
         {/* Onglet Référence complète des codes d'erreur */}
         {activeTab === 'errors' && (
           <div className="space-y-2">
-            <p className="text-[11px] text-[#6B6B7A] leading-snug">
+            <p className="text-[11px] text-[#656575] leading-snug">
               Chaque événement d'erreur émis par le navigateur possède un code normalisé et un message explicatif pour l'utilisateur :
             </p>
 
@@ -388,15 +388,15 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
               {Object.entries(SPEECH_ERROR_MESSAGES).map(([code, explanation]) => (
                 <div
                   key={code}
-                  className="p-2 rounded-xl border border-[#E8E3DA] bg-[#FBF8F3] space-y-1"
+                  className="p-2 rounded-xl border border-[#E6E0D6] bg-[#FBF8F3] space-y-1"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-[11px] text-[#1F2A5C] bg-white px-1.5 py-0.5 rounded border border-[#E8E3DA]">
+                    <span className="font-mono font-bold text-[11px] text-[#1E2958] bg-white px-1.5 py-0.5 rounded border border-[#E6E0D6]">
                       {code}
                     </span>
-                    <span className="text-[9px] uppercase font-bold text-[#6B6B7A]">Code standard</span>
+                    <span className="text-[9px] uppercase font-bold text-[#656575]">Code standard</span>
                   </div>
-                  <p className="text-[11px] text-[#1B1B2A] leading-tight">
+                  <p className="text-[11px] text-[#181826] leading-tight">
                     {explanation}
                   </p>
                 </div>
@@ -409,20 +409,20 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
         {activeTab === 'logs' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-[#6B6B7A]">
+              <span className="text-[11px] text-[#656575]">
                 Événements récents ({events.length}) :
               </span>
               <button
                 type="button"
                 onClick={() => setEvents([])}
-                className="text-[10px] text-[#6B6B7A] hover:text-[#1B1B2A] underline"
+                className="text-[10px] text-[#656575] hover:text-[#181826] underline"
               >
                 Effacer le journal
               </button>
             </div>
 
             {events.length === 0 ? (
-              <p className="text-center py-6 text-xs text-[#6B6B7A] italic">
+              <p className="text-center py-6 text-xs text-[#656575] italic">
                 Aucun événement vocal capturé pour le moment. Activez le micro pour observer les déclenchements en temps réel.
               </p>
             ) : (
@@ -430,10 +430,10 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                 {events.map((ev) => (
                   <div
                     key={ev.id}
-                    className="p-2 rounded-lg bg-[#FBF8F3] border border-[#E8E3DA] text-[11px] space-y-0.5 font-mono"
+                    className="p-2 rounded-lg bg-[#FBF8F3] border border-[#E6E0D6] text-[11px] space-y-0.5 font-mono"
                   >
-                    <div className="flex items-center justify-between text-[9px] text-[#6B6B7A]">
-                      <span className="font-bold uppercase text-[#1F2A5C]">{ev.type}</span>
+                    <div className="flex items-center justify-between text-[9px] text-[#656575]">
+                      <span className="font-bold uppercase text-[#1E2958]">{ev.type}</span>
                       <span>{new Date(ev.timestamp).toLocaleTimeString('fr-FR')}</span>
                     </div>
                     {ev.code && (
@@ -441,7 +441,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                         code: {ev.code}
                       </span>
                     )}
-                    <p className="text-[#1B1B2A] font-sans text-[11px] leading-tight">
+                    <p className="text-[#181826] font-sans text-[11px] leading-tight">
                       {ev.message}
                     </p>
                   </div>
@@ -453,7 +453,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
       </div>
 
       {/* Garantie de confidentialité & Pied du panneau */}
-      <div className="bg-[#FBF8F3] p-2.5 border-t border-[#E8E3DA] flex items-center justify-between text-[10px] text-[#6B6B7A]">
+      <div className="bg-[#FBF8F3] p-2.5 border-t border-[#E6E0D6] flex items-center justify-between text-[10px] text-[#656575]">
         <div className="flex items-center gap-1">
           <span>🔒</span>
           <span>Données vocales sécurisées · Zéro tracking publicitaire</span>
@@ -461,7 +461,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
         <button
           type="button"
           onClick={() => void refreshSystemInfo()}
-          className="underline font-bold text-[#1F2A5C]"
+          className="underline font-bold text-[#1E2958]"
         >
           Actualiser
         </button>
