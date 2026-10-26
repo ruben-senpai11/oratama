@@ -243,11 +243,159 @@ export function isSpeechRecognitionSupported(): boolean {
 export class SpeechRecognitionService {
   private recognition: ISpeechRecognitionInstance | null = null;
   private isListening = false;
+  private userRequestedStop = false;
   private hasReceivedSpeech = false;
   private accumulatedTranscript = '';
   private autoStopTimer: ReturnType<typeof setTimeout> | null = null;
+  private restartTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  private createInstance(callbacks: SpeechRecognitionCallbacks): ISpeechRecognitionInstance | null {
+    const win = window as unknown as IWindowWithSpeech;
+    const RecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (!RecognitionClass) return null;
+
+    const instance = new RecognitionClass();
+    instance.continuous = true;
+    instance.interimResults = true;
+    instance.lang = 'fr-FR';
+    instance.maxAlternatives = 1;
+
+    instance.onstart = () => {
+      this.isListening = true;
+      dispatchDiagnosticEvent({
+        type: 'start',
+        message: 'Reconnaissance vocale lancée (langue: fr-FR).',
+      });
+      callbacks.onStart?.();
+    };
+
+    instance.onresult = (event: SpeechRecognitionEventLike) => {
+      let currentInterim = '';
+      let currentFinal = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const item = event.results[i];
+        if (item.isFinal) {
+          currentFinal += item[0].transcript;
+        } else {
+          currentInterim += item[0].transcript;
+        }
+      }
+
+      if (currentInterim || currentFinal) {
+        this.hasReceivedSpeech = true;
+      }
+
+      if (currentFinal) {
+        this.accumulatedTranscript = (this.accumulatedTranscript + ' ' + currentFinal).trim();
+        dispatchDiagnosticEvent({
+          type: 'result',
+          message: `Transcription finale partielle : « ${this.accumulatedTranscript} »`,
+        });
+        callbacks.onFinalResult?.(this.accumulatedTranscript);
+      } else if (currentInterim) {
+        const combined = (this.accumulatedTranscript + ' ' + currentInterim).trim();
+        callbacks.onInterimResult?.(combined);
+      }
+    };
+
+    instance.onerror = (event: SpeechRecognitionErrorEventLike) => {
+      const error = event.error || 'other';
+
+      // Le silence ou une interruption automatique par le navigateur ne doit pas couper la session
+      if (error === 'no-speech' || (error === 'aborted' && !this.userRequestedStop)) {
+        dispatchDiagnosticEvent({
+          type: 'error',
+          code: error,
+          message: SPEECH_ERROR_MESSAGES[error] || error,
+        });
+        return;
+      }
+
+      this.isListening = false;
+      this.clearAutoStopTimer();
+      this.clearRestartTimeout();
+
+      const message = SPEECH_ERROR_MESSAGES[error] || `Erreur SpeechRecognition : ${error}`;
+      dispatchDiagnosticEvent({
+        type: 'error',
+        code: error,
+        message,
+      });
+
+      if (error === 'service-not-allowed') {
+        callbacks.onError?.('service-not-allowed', message, 'service-not-allowed');
+      } else if (error === 'not-allowed') {
+        callbacks.onError?.('not-allowed', message, 'not-allowed');
+      } else if (error === 'audio-capture') {
+        callbacks.onError?.('audio-capture', message, 'audio-capture');
+      } else if (error === 'network') {
+        callbacks.onError?.('network', message, 'network');
+      } else if (error === 'language-not-supported') {
+        callbacks.onError?.('language-not-supported', message, 'language-not-supported');
+      } else {
+        callbacks.onError?.('other', message, error);
+      }
+    };
+
+    instance.onend = () => {
+      // Tant que l'utilisateur n'a pas lui-même cliqué sur "Terminer",
+      // le navigateur qui coupe sur un silence de 2s est automatiquement relancé.
+      if (!this.userRequestedStop && this.isListening) {
+        this.clearRestartTimeout();
+        this.restartTimeout = setTimeout(() => {
+          if (!this.userRequestedStop && this.isListening) {
+            try {
+              this.recognition?.start();
+              dispatchDiagnosticEvent({
+                type: 'start',
+                message: 'Reconnaissance vocale maintenue active (redémarrage après pause de parole).',
+              });
+            } catch {
+              try {
+                this.recognition = this.createInstance(callbacks);
+                this.recognition?.start();
+              } catch {
+                // ignore
+              }
+            }
+          }
+        }, 80);
+        return;
+      }
+
+      // Arrêt volontaire demandé par l'utilisateur
+      this.isListening = false;
+      this.clearAutoStopTimer();
+      this.clearRestartTimeout();
+
+      dispatchDiagnosticEvent({
+        type: 'end',
+        message: 'Session SpeechRecognition terminée.',
+      });
+
+      if (this.accumulatedTranscript.trim()) {
+        callbacks.onFinalResult?.(this.accumulatedTranscript.trim());
+      } else if (!this.hasReceivedSpeech) {
+        callbacks.onError?.(
+          'no-speech',
+          SPEECH_ERROR_MESSAGES['no-speech'],
+          'no-speech'
+        );
+      }
+      callbacks.onEnd?.();
+    };
+
+    return instance;
+  }
 
   public async start(callbacks: SpeechRecognitionCallbacks): Promise<boolean> {
+    this.userRequestedStop = false;
+    this.hasReceivedSpeech = false;
+    this.accumulatedTranscript = '';
+    this.clearAutoStopTimer();
+    this.clearRestartTimeout();
+
     if (!isSpeechRecognitionSupported()) {
       const msg = 'La reconnaissance vocale n’est pas supportée par votre navigateur. Utilisez le champ texte ci-dessous.';
       dispatchDiagnosticEvent({
@@ -294,128 +442,27 @@ export class SpeechRecognitionService {
     }
 
     // 2. Arrêter toute session précédente
-    this.stop();
-
-    const win = window as unknown as IWindowWithSpeech;
-    const RecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
-    if (!RecognitionClass) return false;
+    if (this.recognition) {
+      try {
+        this.recognition.abort();
+      } catch {
+        // ignore
+      }
+    }
 
     // 3. Créer une nouvelle instance dédiée
     try {
-      this.recognition = new RecognitionClass();
-      this.recognition.continuous = true;
-      this.recognition.interimResults = true;
-      this.recognition.lang = 'fr-FR';
-      this.recognition.maxAlternatives = 1;
-      this.hasReceivedSpeech = false;
-      this.accumulatedTranscript = '';
+      this.recognition = this.createInstance(callbacks);
+      if (!this.recognition) return false;
 
-      // Pas de limite courte arbitraire : l'utilisateur parle librement aussi longtemps qu'il le souhaite.
-      // Sécurité d'inactivité de 3 minutes (180s) pour éviter l'oubli.
-      this.clearAutoStopTimer();
+      this.isListening = true;
+
+      // Sécurité d'inactivité de 3 minutes (180s) pour éviter l'oubli
       this.autoStopTimer = setTimeout(() => {
         if (this.isListening) {
           this.stop();
         }
       }, 180000);
-
-      this.recognition.onstart = () => {
-        this.isListening = true;
-        dispatchDiagnosticEvent({
-          type: 'start',
-          message: 'Reconnaissance vocale lancée (langue: fr-FR).',
-        });
-        callbacks.onStart?.();
-      };
-
-      this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
-        let currentInterim = '';
-        let currentFinal = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const item = event.results[i];
-          if (item.isFinal) {
-            currentFinal += item[0].transcript;
-          } else {
-            currentInterim += item[0].transcript;
-          }
-        }
-
-        if (currentInterim || currentFinal) {
-          this.hasReceivedSpeech = true;
-        }
-
-        if (currentFinal) {
-          this.accumulatedTranscript = (this.accumulatedTranscript + ' ' + currentFinal).trim();
-          dispatchDiagnosticEvent({
-            type: 'result',
-            message: `Transcription finale partielle : « ${this.accumulatedTranscript} »`,
-          });
-          callbacks.onFinalResult?.(this.accumulatedTranscript);
-        } else if (currentInterim) {
-          const combined = (this.accumulatedTranscript + ' ' + currentInterim).trim();
-          callbacks.onInterimResult?.(combined);
-        }
-      };
-
-      this.recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
-        const error = event.error || 'other';
-
-        // Le silence ne doit pas couper brutalement la session
-        if (error === 'no-speech') {
-          dispatchDiagnosticEvent({
-            type: 'error',
-            code: 'no-speech',
-            message: SPEECH_ERROR_MESSAGES['no-speech'],
-          });
-          return;
-        }
-
-        this.isListening = false;
-        this.clearAutoStopTimer();
-
-        const message = SPEECH_ERROR_MESSAGES[error] || `Erreur SpeechRecognition : ${error}`;
-        dispatchDiagnosticEvent({
-          type: 'error',
-          code: error,
-          message,
-        });
-
-        if (error === 'service-not-allowed') {
-          callbacks.onError?.('service-not-allowed', message, 'service-not-allowed');
-        } else if (error === 'not-allowed') {
-          callbacks.onError?.('not-allowed', message, 'not-allowed');
-        } else if (error === 'audio-capture') {
-          callbacks.onError?.('audio-capture', message, 'audio-capture');
-        } else if (error === 'network') {
-          callbacks.onError?.('network', message, 'network');
-        } else if (error === 'language-not-supported') {
-          callbacks.onError?.('language-not-supported', message, 'language-not-supported');
-        } else {
-          callbacks.onError?.('other', message, error);
-        }
-      };
-
-      this.recognition.onend = () => {
-        this.isListening = false;
-        this.clearAutoStopTimer();
-
-        dispatchDiagnosticEvent({
-          type: 'end',
-          message: 'Session SpeechRecognition terminée.',
-        });
-
-        if (this.accumulatedTranscript.trim()) {
-          callbacks.onFinalResult?.(this.accumulatedTranscript.trim());
-        } else if (!this.hasReceivedSpeech) {
-          callbacks.onError?.(
-            'no-speech',
-            SPEECH_ERROR_MESSAGES['no-speech'],
-            'no-speech'
-          );
-        }
-        callbacks.onEnd?.();
-      };
 
       this.recognition.start();
       return true;
@@ -433,7 +480,9 @@ export class SpeechRecognitionService {
   }
 
   public stop(): void {
+    this.userRequestedStop = true;
     this.clearAutoStopTimer();
+    this.clearRestartTimeout();
     if (this.recognition && this.isListening) {
       try {
         this.recognition.stop();
@@ -445,7 +494,9 @@ export class SpeechRecognitionService {
   }
 
   public abort(): void {
+    this.userRequestedStop = true;
     this.clearAutoStopTimer();
+    this.clearRestartTimeout();
     if (this.recognition && this.isListening) {
       try {
         this.recognition.abort();
@@ -460,6 +511,13 @@ export class SpeechRecognitionService {
     if (this.autoStopTimer) {
       clearTimeout(this.autoStopTimer);
       this.autoStopTimer = null;
+    }
+  }
+
+  private clearRestartTimeout(): void {
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
     }
   }
 }

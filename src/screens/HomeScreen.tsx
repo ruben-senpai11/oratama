@@ -47,6 +47,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
   // Moteur Web Speech : Reconnaissance locale navigateur
   const speechRecognitionRef = useRef<SpeechRecognitionService | null>(null);
   const lastWebSpeechTranscriptRef = useRef<string>('');
+  const webSpeechTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     recorderRef.current = new AudioRecorderService();
@@ -55,6 +56,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
     return () => {
       recorderRef.current?.cancelRecording();
       speechRecognitionRef.current?.abort();
+      if (webSpeechTimerRef.current) {
+        clearInterval(webSpeechTimerRef.current);
+      }
     };
   }, []);
 
@@ -90,10 +94,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
       if (!speechRecognitionRef.current) return;
       setStatusMessage('Démarrage de Web Speech API…');
 
+      if (webSpeechTimerRef.current) {
+        clearInterval(webSpeechTimerRef.current);
+        webSpeechTimerRef.current = null;
+      }
+
       const started = await speechRecognitionRef.current.start({
         onStart: () => {
           setMicState('ecoute');
-          setStatusMessage('Web Speech actif : je vous écoute… Parlez distinctement.');
+          setStatusMessage('Web Speech actif : je vous écoute… Touchez « Terminer » quand vous avez fini.');
+          if (webSpeechTimerRef.current) clearInterval(webSpeechTimerRef.current);
+          webSpeechTimerRef.current = setInterval(() => {
+            setElapsedSeconds((prev) => prev + 1);
+          }, 1000);
         },
         onInterimResult: (interim) => {
           setLiveTranscript(interim);
@@ -102,9 +115,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
         onFinalResult: (final) => {
           setLiveTranscript(final);
           lastWebSpeechTranscriptRef.current = final;
-          handleWebSpeechComplete(final);
+          // Ne pas couper : l'utilisateur continue de parler et appuiera lui-même sur "Terminer"
         },
         onError: (errType, msg) => {
+          if (webSpeechTimerRef.current) {
+            clearInterval(webSpeechTimerRef.current);
+            webSpeechTimerRef.current = null;
+          }
           setMicState('erreur');
           setErrorInfo({
             type: errType === 'not-allowed' ? 'permission' : errType === 'no-speech' ? 'no-speech' : 'general',
@@ -113,8 +130,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
           setStatusMessage('Reconnaissance interrompue. Touchez « Réessayer » pour recommencer.');
         },
         onEnd: () => {
-          if (lastWebSpeechTranscriptRef.current) {
-            handleWebSpeechComplete(lastWebSpeechTranscriptRef.current);
+          if (webSpeechTimerRef.current) {
+            clearInterval(webSpeechTimerRef.current);
+            webSpeechTimerRef.current = null;
           }
         },
       });
@@ -165,16 +183,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch }) 
   // Arrêt volontaire par l'utilisateur
   const handleStopListening = () => {
     if (speechEngine === 'webspeech') {
+      if (webSpeechTimerRef.current) {
+        clearInterval(webSpeechTimerRef.current);
+        webSpeechTimerRef.current = null;
+      }
       setMicState('analyse');
       setStatusMessage('Finalisation de la transcription…');
       if (speechRecognitionRef.current) {
         speechRecognitionRef.current.stop();
-        setTimeout(() => {
-          if (lastWebSpeechTranscriptRef.current) {
-            handleWebSpeechComplete(lastWebSpeechTranscriptRef.current);
-          }
-        }, 400);
       }
+      setTimeout(() => {
+        handleWebSpeechComplete(lastWebSpeechTranscriptRef.current);
+      }, 350);
       return;
     }
 
